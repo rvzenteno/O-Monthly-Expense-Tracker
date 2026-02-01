@@ -1,0 +1,456 @@
+/* Monthly Expense Tracker Styles */
+
+.expense-tracker-dashboard {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.expense-tracker-header h2 {
+    margin: 0 0 20px 0;
+    color: var(--text-normal);
+}
+
+/* Month Selector */
+.expense-tracker-month-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.expense-tracker-month-display {
+    flex: 1;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.expense-tracker-month-selector button {
+    padding: 5px 15px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.expense-tracker-month-selector button:hover {
+    background: var(--interactive-accent-hover);
+}
+
+/* Summary Stats */
+.expense-tracker-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    padding: 15px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.summary-label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.summary-value {
+    display: block;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--text-normal);
+}
+
+.summary-value.unpaid {
+    color: var(--text-error);
+}
+
+.summary-value.paid {
+    color: var(--text-success);
+}
+
+/* Action Buttons */
+.expense-tracker-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.expense-tracker-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: var(--interactive-normal);
+    color: var(--text-normal);
+}
+
+.expense-tracker-actions button:hover {
+    background: var(--interactive-hover);
+}
+
+.expense-tracker-actions button.mod-cta {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.expense-tracker-actions button.mod-cta:hover {
+    background: var(--interactive-accent-hover);
+}
+
+/* Expense List */
+.expense-tracker-list {
+    margin-top: 20px;
+}
+
+.expense-tracker-list h3 {
+    margin: 20px 0 10px 0;
+    color: var(--text-normal);
+    font-size: 1.1em;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 5px;
+}
+
+.expense-tracker-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Expense Item */
+.expense-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border-left: 4px solid var(--background-modifier-border);
+    transition: all 0.2s ease;
+}
+
+.expense-item:hover {
+    background: var(--background-secondary-alt);
+    transform: translateX(2px);
+}
+
+.expense-item.paid {
+    opacity: 0.7;
+    border-left-color: var(--text-success);
+}
+
+.expense-item.overdue {
+    border-left-color: var(--text-error);
+    background: var(--background-modifier-error);
+}
+
+.expense-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.expense-content {
+    flex: 1;
+}
+
+.expense-name {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 5px;
+}
+
+.expense-details {
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.overdue-badge {
+    color: var(--text-error);
+    font-weight: 700;
+    font-size: 0.9em;
+}
+
+.expense-actions {
+    flex-shrink: 0;
+}
+
+.expense-actions button {
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.expense-actions button:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+/* Archived Section */
+.expense-tracker-archived {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid var(--background-modifier-border);
+}
+
+.expense-tracker-archived h3 {
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.expense-tracker-archived h3:hover {
+    color: var(--text-normal);
+}
+
+.expense-tracker-archived-list {
+    margin-top: 10px;
+}
+
+.expense-item.archived {
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.expense-item.archived:hover {
+    opacity: 0.7;
+}
+
+/* Modals */
+.expense-form {
+    margin: 20px 0;
+}
+
+.modal-button-container {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.modal-button-container button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: var(--interactive-normal);
+    color: var(--text-normal);
+}
+
+.modal-button-container button:hover {
+    background: var(--interactive-hover);
+}
+
+.modal-button-container button.mod-cta {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.modal-button-container button.mod-cta:hover {
+    background: var(--interactive-accent-hover);
+}
+
+/* History Table */
+.expense-history-table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+}
+
+.expense-history-table th,
+.expense-history-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.expense-history-table th {
+    background: var(--background-secondary);
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.expense-history-table td {
+    color: var(--text-muted);
+}
+
+.expense-history-table tr:hover {
+    background: var(--background-secondary-alt);
+}
+
+/* Status Bar */
+.expense-tracker-unpaid {
+    color: var(--text-error);
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .expense-tracker-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .expense-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .expense-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .expense-tracker-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .expense-tracker-month-selector {
+        flex-wrap: wrap;
+    }
+    
+    .expense-tracker-month-display {
+        width: 100%;
+        margin: 10px 0;
+    }
+}
+
+/* Dark Theme Adjustments */
+.theme-dark .expense-item.overdue {
+    background: rgba(var(--color-red-rgb), 0.1);
+}
+
+/* Light Theme Adjustments */
+.theme-light .expense-item.overdue {
+    background: rgba(var(--color-red-rgb), 0.05);
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.expense-item {
+    animation: slideIn 0.3s ease;
+}
+
+/* Custom Scrollbar */
+.expense-tracker-dashboard::-webkit-scrollbar {
+    width: 8px;
+}
+
+.expense-tracker-dashboard::-webkit-scrollbar-track {
+    background: var(--background-primary);
+}
+
+.expense-tracker-dashboard::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.expense-tracker-dashboard::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Support Modal */
+.expense-tracker-support-modal .modal-content {
+    max-width: 600px;
+}
+
+.expense-tracker-support-modal .support-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.expense-tracker-support-modal .support-section:last-of-type {
+    border-bottom: none;
+}
+
+.expense-tracker-support-modal .support-section h3 {
+    margin: 0 0 10px 0;
+    color: var(--text-normal);
+}
+
+.expense-tracker-support-modal .support-section p {
+    margin: 5px 0;
+    color: var(--text-muted);
+}
+
+.expense-tracker-support-modal .support-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.expense-tracker-support-modal .support-link:hover {
+    background: var(--interactive-accent-hover);
+}
+
+.expense-tracker-support-modal .crypto-addresses {
+    margin-top: 10px;
+}
+
+.expense-tracker-support-modal .crypto-address {
+    margin-bottom: 15px;
+}
+
+.expense-tracker-support-modal .support-footer {
+    text-align: center;
+}
+
+.expense-tracker-support-modal .support-footer p {
+    margin: 5px 0;
+    font-weight: 600;
+    color: var(--interactive-accent);
+}
+
+.expense-tracker-support-modal .support-footer small {
+    color: var(--text-muted);
+}
+
+/* Support Section in Settings */
+.expense-tracker-support-section a:hover {
+    opacity: 0.9;
+}
+
+.expense-tracker-divider {
+    margin: 30px 0;
+    border: none;
+    border-top: 2px solid var(--background-modifier-border);
+}
+

@@ -1,0 +1,10 @@
+{
+  "id": "monthly-expense-tracker",
+  "name": "Monthly Expense Tracker",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Track recurring monthly expenses with payment status, reminders, and reporting. Perfect for managing bills, subscriptions, and regular payments.",
+  "author": "Victor",
+  "authorUrl": "https://github.com/yourusername",
+  "isDesktopOnly": false
+}
