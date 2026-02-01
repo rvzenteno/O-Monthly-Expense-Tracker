@@ -16,6 +16,7 @@ interface RecurringExpense {
     id: string;
     name: string;
     amount: number;
+    currency?: string; // e.g., 'USD', 'BOB'
     dueDay: number; // Day of month (1-31)
     paymentMethod: string;
     startDate: string; // YYYY-MM format
@@ -28,6 +29,7 @@ interface OneTimeExpense {
     id: string;
     name: string;
     amount: number;
+    currency?: string; // e.g., 'USD', 'BOB'
     date: string; // YYYY-MM-DD
     paymentMethod: string;
     paid: boolean;
@@ -201,7 +203,8 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             const payment = this.getPayment(expense.id, month);
             const status = payment?.paid ? 'x' : ' ';
             const statusIcon = payment?.paid ? '✅' : '⬜';
-            expenseList += `- [${status}] ${statusIcon} **${expense.name}** - $${expense.amount.toFixed(2)} - Due: ${expense.dueDay} - Method: ${expense.paymentMethod}\n`;
+            const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
+            expenseList += `- [${status}] ${statusIcon} **${expense.name}** - ${symbol}${expense.amount.toFixed(2)} - Due: ${expense.dueDay} - Method: ${expense.paymentMethod}\n`;
             expenseList += `  - ID: \`${expense.id}\`\n`;
             if (payment?.confirmationNumber) {
                 expenseList += `  - Confirmation: ${payment.confirmationNumber}\n`;
@@ -214,7 +217,8 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             oneTimeExpenses.forEach(expense => {
                 const status = expense.paid ? 'x' : ' ';
                 const statusIcon = expense.paid ? '✅' : '⬜';
-                expenseList += `- [${status}] ${statusIcon} **${expense.name}** - $${expense.amount.toFixed(2)} - Date: ${expense.date} - Method: ${expense.paymentMethod}\n`;
+                const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
+                expenseList += `- [${status}] ${statusIcon} **${expense.name}** - ${symbol}${expense.amount.toFixed(2)} - Date: ${expense.date} - Method: ${expense.paymentMethod}\n`;
                 expenseList += `  - ID: \`${expense.id}\`\n`;
                 if (expense.confirmationNumber) {
                     expenseList += `  - Confirmation: ${expense.confirmationNumber}\n`;
@@ -226,7 +230,8 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         if (unpaidFromPrev.length > 0) {
             expenseList += '\n## Unpaid from Previous Month\n\n';
             unpaidFromPrev.forEach(expense => {
-                expenseList += `- [ ] ⚠️ **${expense.name}** - $${expense.amount.toFixed(2)} - OVERDUE\n`;
+                const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
+                expenseList += `- [ ] ⚠️ **${expense.name}** - ${symbol}${expense.amount.toFixed(2)} - OVERDUE\n`;
                 expenseList += `  - ID: \`${expense.id}\`\n\n`;
             });
         }
@@ -485,50 +490,76 @@ class DashboardView extends ItemView {
         const recurringExpenses = this.plugin.getExpensesForMonth(this.currentMonth);
         const oneTimeExpenses = this.plugin.getOneTimeExpensesForMonth(this.currentMonth);
 
-        // Calculate totals
-        const recurringTotal = recurringExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const oneTimeTotal = oneTimeExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const totalAmount = recurringTotal + oneTimeTotal;
+        // Calculate totals by currency
+        const totals: { [key: string]: { total: number, paid: number, unpaidCount: number } } = {};
+        let totalCount = 0;
+        let totalUnpaidCount = 0;
 
-        const recurringPaid = recurringExpenses
-            .filter(e => {
-                const payment = this.plugin.getPayment(e.id, this.currentMonth);
-                return payment?.paid;
-            })
-            .reduce((sum, e) => sum + e.amount, 0);
+        const processExpense = (amount: number, currency: string, paid: boolean) => {
+            if (!totals[currency]) totals[currency] = { total: 0, paid: 0, unpaidCount: 0 };
+            totals[currency].total += amount;
+            if (paid) {
+                totals[currency].paid += amount;
+            } else {
+                totals[currency].unpaidCount++;
+                totalUnpaidCount++;
+            }
+            totalCount++;
+        };
 
-        const oneTimePaid = oneTimeExpenses
-            .filter(e => e.paid)
-            .reduce((sum, e) => sum + e.amount, 0);
-
-        const paidAmount = recurringPaid + oneTimePaid;
-
-        const recurringUnpaidCount = recurringExpenses.filter(e => {
+        recurringExpenses.forEach(e => {
             const payment = this.plugin.getPayment(e.id, this.currentMonth);
-            return !payment || !payment.paid;
-        }).length;
+            const isPaid = payment?.paid || false;
+            processExpense(e.amount, e.currency || 'USD', isPaid);
+        });
 
-        const oneTimeUnpaidCount = oneTimeExpenses.filter(e => !e.paid).length;
-        const totalUnpaidCount = recurringUnpaidCount + oneTimeUnpaidCount;
-        const totalCount = recurringExpenses.length + oneTimeExpenses.length;
+        oneTimeExpenses.forEach(e => {
+            processExpense(e.amount, e.currency || 'USD', e.paid);
+        });
 
         const summary = container.createDiv('expense-tracker-summary');
+
+        // General Stats
         summary.createDiv('summary-item').innerHTML = `
             <span class="summary-label">Total Expenses:</span>
             <span class="summary-value">${totalCount}</span>
         `;
         summary.createDiv('summary-item').innerHTML = `
-            <span class="summary-label">Unpaid:</span>
+            <span class="summary-label">Unpaid Count:</span>
             <span class="summary-value unpaid">${totalUnpaidCount}</span>
         `;
-        summary.createDiv('summary-item').innerHTML = `
-            <span class="summary-label">Total Amount:</span>
-            <span class="summary-value">$${totalAmount.toFixed(2)}</span>
-        `;
-        summary.createDiv('summary-item').innerHTML = `
-            <span class="summary-label">Paid:</span>
-            <span class="summary-value paid">$${paidAmount.toFixed(2)}</span>
-        `;
+
+        // Financial Totals per Currency
+        const currencies = Object.keys(totals).sort();
+        if (currencies.length === 0) {
+            summary.createDiv('summary-item').innerHTML = `
+                <span class="summary-label">Total Amount:</span>
+                <span class="summary-value">$0.00</span>
+            `;
+        } else {
+            const totalsDiv = container.createDiv('summary-totals');
+            totalsDiv.style.gridColumn = '1 / -1';
+            totalsDiv.style.marginTop = '10px';
+            totalsDiv.style.borderTop = '1px solid var(--background-modifier-border)';
+            totalsDiv.style.paddingTop = '10px';
+
+            currencies.forEach(currency => {
+                const symbol = currency === 'USD' ? '$' : (currency === 'BOB' ? 'Bs ' : `${currency} `);
+                const data = totals[currency];
+
+                const row = totalsDiv.createDiv('currency-row');
+                row.style.display = 'flex';
+                row.style.justifyContent = 'space-between';
+                row.style.marginBottom = '5px';
+
+                row.innerHTML = `
+                    <span style="font-weight: bold;">${currency}</span>
+                    <span>Total: ${symbol}${data.total.toFixed(2)}</span>
+                    <span class="paid">Paid: ${symbol}${data.paid.toFixed(2)}</span>
+                    <span class="unpaid">Unpaid: ${symbol}${(data.total - data.paid).toFixed(2)}</span>
+                `;
+            });
+        }
 
         // Action buttons
         const actions = container.createDiv('expense-tracker-actions');
@@ -617,7 +648,7 @@ class DashboardView extends ItemView {
                 const item = archivedList.createDiv('expense-item archived');
                 item.innerHTML = `
                     <div class="expense-name">${expense.name}</div>
-                    <div class="expense-details">$${expense.amount.toFixed(2)} - ${expense.paymentMethod}</div>
+                    <div class="expense-details">${expense.currency === 'USD' ? '$' : (expense.currency === 'BOB' ? 'Bs ' : (expense.currency + ' '))}${expense.amount.toFixed(2)} - ${expense.paymentMethod}</div>
                 `;
 
                 item.onclick = (e) => {
@@ -672,8 +703,9 @@ class DashboardView extends ItemView {
         }
 
         const details = content.createDiv('expense-details');
+        const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
         details.innerHTML = `
-            $${expense.amount.toFixed(2)} • Due: ${expense.dueDay} • ${expense.paymentMethod}
+            ${symbol}${expense.amount.toFixed(2)} • Due: ${expense.dueDay} • ${expense.paymentMethod}
             ${payment?.confirmationNumber ? `<br>Confirmation: ${payment.confirmationNumber}` : ''}
             ${payment?.paidDate ? `<br>Paid: ${payment.paidDate}` : ''}
         `;
@@ -718,15 +750,19 @@ class DashboardView extends ItemView {
         const content = item.createDiv('expense-content');
         const nameDiv = content.createDiv('expense-name');
         nameDiv.setText(expense.name);
-        nameDiv.createSpan({ text: ' (One-Time)', cls: 'expense-type-badge', style: 'font-size: 0.8em; color: var(--text-muted); margin-left: 5px;' });
+        const badge = nameDiv.createSpan({ text: ' (One-Time)', cls: 'expense-type-badge' });
+        badge.style.fontSize = '0.8em';
+        badge.style.color = 'var(--text-muted)';
+        badge.style.marginLeft = '5px';
 
         if (isOverdue) {
             nameDiv.createSpan({ text: ' ⚠️ OVERDUE', cls: 'overdue-badge' });
         }
 
         const details = content.createDiv('expense-details');
+        const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
         details.innerHTML = `
-            $${expense.amount.toFixed(2)} • Date: ${expense.date} • ${expense.paymentMethod}
+            ${symbol}${expense.amount.toFixed(2)} • Date: ${expense.date} • ${expense.paymentMethod}
             ${expense.confirmationNumber ? `<br>Confirmation: ${expense.confirmationNumber}` : ''}
             ${expense.paidDate ? `<br>Paid: ${expense.paidDate}` : ''}
         `;
@@ -840,6 +876,17 @@ class AddExpenseModal extends Modal {
                 text.inputEl.id = 'expense-name';
             });
 
+        // Currency
+        new Setting(form)
+            .setName('Currency')
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOption('USD', 'USD ($)')
+                    .addOption('BOB', 'BOB (Bs)')
+                    .setValue(this.expense?.currency || this.oneTimeExpense?.currency || 'USD');
+                dropdown.selectEl.id = 'expense-currency';
+            });
+
         // Amount
         new Setting(form)
             .setName('Amount')
@@ -922,6 +969,7 @@ class AddExpenseModal extends Modal {
 
     async handleSubmit() {
         const name = (document.getElementById('expense-name') as HTMLInputElement).value;
+        const currency = (document.getElementById('expense-currency') as HTMLInputElement).value;
         const amount = parseFloat((document.getElementById('expense-amount') as HTMLInputElement).value);
         const paymentMethod = (document.getElementById('expense-payment-method') as HTMLInputElement).value;
         const category = (document.getElementById('expense-category') as HTMLInputElement).value;
@@ -946,6 +994,7 @@ class AddExpenseModal extends Modal {
                 id: this.expense?.id || `exp-${Date.now()}`,
                 name,
                 amount,
+                currency,
                 dueDay,
                 paymentMethod,
                 startDate,
@@ -971,6 +1020,7 @@ class AddExpenseModal extends Modal {
                 id: this.oneTimeExpense?.id || `one-${Date.now()}`,
                 name,
                 amount,
+                currency,
                 date,
                 paymentMethod,
                 category: category || undefined,
@@ -1309,9 +1359,10 @@ class ReportModal extends Modal {
         const start = moment(startMonth, 'YYYY-MM');
         const end = moment(endMonth, 'YYYY-MM');
 
-        let totalAmount = 0;
-        let totalPaid = 0;
-        let totalUnpaid = 0;
+        // Aggregate totals by currency
+        const totalAmount: { [key: string]: number } = {};
+        const totalPaid: { [key: string]: number } = {};
+        const totalUnpaid: { [key: string]: number } = {};
 
         report += `## Monthly Breakdown\n\n`;
 
@@ -1321,45 +1372,69 @@ class ReportModal extends Modal {
             const recurringExpenses = this.plugin.getExpensesForMonth(month);
             const oneTimeExpenses = this.plugin.getOneTimeExpensesForMonth(month);
 
-            /// Calculate recurring
-            const recurringTotal = recurringExpenses.reduce((sum, e) => sum + e.amount, 0);
-            const recurringPaid = recurringExpenses
-                .filter(e => {
-                    const payment = this.plugin.getPayment(e.id, month);
-                    return payment?.paid;
-                })
-                .reduce((sum, e) => sum + e.amount, 0);
+            const monthTotals: { [key: string]: { total: number, paid: number } } = {};
 
-            // Calculate one-time
-            const oneTimeTotal = oneTimeExpenses.reduce((sum, e) => sum + e.amount, 0);
-            const oneTimePaid = oneTimeExpenses
-                .filter(e => e.paid)
-                .reduce((sum, e) => sum + e.amount, 0);
+            const process = (amount: number, currency: string, paid: boolean) => {
+                if (!monthTotals[currency]) monthTotals[currency] = { total: 0, paid: 0 };
+                monthTotals[currency].total += amount;
+                if (paid) monthTotals[currency].paid += amount;
 
-            const monthTotal = recurringTotal + oneTimeTotal;
-            const monthPaid = recurringPaid + oneTimePaid;
-            const monthUnpaid = monthTotal - monthPaid;
+                // Add to global totals
+                if (!totalAmount[currency]) totalAmount[currency] = 0;
+                if (!totalPaid[currency]) totalPaid[currency] = 0;
+                totalAmount[currency] += amount;
+                if (paid) totalPaid[currency] += amount;
+            };
 
-            totalAmount += monthTotal;
-            totalPaid += monthPaid;
-            totalUnpaid += monthUnpaid;
+            // Recurring
+            recurringExpenses.forEach(e => {
+                const payment = this.plugin.getPayment(e.id, month);
+                process(e.amount, e.currency || 'USD', payment?.paid || false);
+            });
+
+            // One-Time
+            oneTimeExpenses.forEach(e => {
+                process(e.amount, e.currency || 'USD', e.paid);
+            });
 
             report += `### ${current.format('MMMM YYYY')}\n\n`;
-            report += `- Total: $${monthTotal.toFixed(2)}\n`;
-            report += `- Paid: $${monthPaid.toFixed(2)}\n`;
-            report += `- Unpaid: $${monthUnpaid.toFixed(2)}\n`;
-            report += `- Recurring Expenses: ${recurringExpenses.length}\n`;
-            report += `- One-Time Expenses: ${oneTimeExpenses.length}\n\n`;
+
+            const currencies = Object.keys(monthTotals).sort();
+            if (currencies.length === 0) {
+                report += `- No expenses\n`;
+            } else {
+                currencies.forEach(currency => {
+                    const symbol = currency === 'USD' ? '$' : (currency === 'BOB' ? 'Bs ' : `${currency} `);
+                    const data = monthTotals[currency];
+                    const unpaid = data.total - data.paid;
+                    report += `- **${currency}**: Total: ${symbol}${data.total.toFixed(2)} | Paid: ${symbol}${data.paid.toFixed(2)} | Unpaid: ${symbol}${unpaid.toFixed(2)}\n`;
+                });
+            }
+            report += `\n`;
 
             current.add(1, 'month');
         }
 
         report += `## Summary\n\n`;
-        report += `- **Total Amount:** $${totalAmount.toFixed(2)}\n`;
-        report += `- **Total Paid:** $${totalPaid.toFixed(2)}\n`;
-        report += `- **Total Unpaid:** $${totalUnpaid.toFixed(2)}\n`;
-        report += `- **Payment Rate:** ${totalAmount > 0 ? ((totalPaid / totalAmount) * 100).toFixed(1) : 0}%\n\n`;
+        const allCurrencies = Object.keys(totalAmount).sort();
 
+        if (allCurrencies.length === 0) {
+            report += `No expenses found in this period.\n\n`;
+        } else {
+            allCurrencies.forEach(currency => {
+                const symbol = currency === 'USD' ? '$' : (currency === 'BOB' ? 'Bs ' : `${currency} `);
+                const total = totalAmount[currency];
+                const paid = totalPaid[currency] || 0;
+                const unpaid = total - paid;
+                const rate = total > 0 ? ((paid / total) * 100).toFixed(1) : '0';
+
+                report += `### ${currency}\n`;
+                report += `- **Total Amount:** ${symbol}${total.toFixed(2)}\n`;
+                report += `- **Total Paid:** ${symbol}${paid.toFixed(2)}\n`;
+                report += `- **Total Unpaid:** ${symbol}${unpaid.toFixed(2)}\n`;
+                report += `- **Payment Rate:** ${rate}%\n\n`;
+            });
+        }
         // Expense breakdown (Recurring only for detailed history usually, but maybe list one-time significant ones?)
         // Let's keep existing breakdown for recurring as they track over time.
         report += `## Recurring Expense Breakdown\n\n`;
@@ -1372,11 +1447,12 @@ class ReportModal extends Modal {
             const paidCount = payments.filter(p => p.paid).length;
             const totalCount = payments.length;
 
+            const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
             report += `### ${expense.name}\n\n`;
-            report += `- Amount: $${expense.amount.toFixed(2)}\n`;
+            report += `- Amount: ${symbol}${expense.amount.toFixed(2)}\n`;
             report += `- Payment Method: ${expense.paymentMethod}\n`;
             report += `- Paid: ${paidCount}/${totalCount} months\n`;
-            report += `- Total Paid: $${(paidCount * expense.amount).toFixed(2)}\n\n`;
+            report += `- Total Paid: ${symbol}${(paidCount * expense.amount).toFixed(2)}\n\n`;
         });
 
         // Maybe add One-Time list?
@@ -1388,7 +1464,8 @@ class ReportModal extends Modal {
         if (allOneTime.length > 0) {
             allOneTime.forEach(e => {
                 const status = e.paid ? 'Paid' : 'Unpaid';
-                report += `- ${e.date}: **${e.name}** - $${e.amount.toFixed(2)} (${status})\n`;
+                const symbol = (e.currency || 'USD') === 'USD' ? '$' : ((e.currency || 'USD') === 'BOB' ? 'Bs ' : `${e.currency} `);
+                report += `- ${e.date}: **${e.name}** - ${symbol}${e.amount.toFixed(2)} (${status})\n`;
             });
         } else {
             report += `No one-time expenses in this period.\n`;
