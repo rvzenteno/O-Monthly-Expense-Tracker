@@ -203,7 +203,13 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             const payment = this.getPayment(expense.id, month);
             const status = payment?.paid ? 'x' : ' ';
             const statusIcon = payment?.paid ? '✅' : '⬜';
-            const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
+            const cur = expense.currency || 'USD';
+            let symbol = cur + ' ';
+            if (cur === 'USD') symbol = '$';
+            else if (cur === 'BOB') symbol = 'Bs ';
+            else if (cur === 'EUR') symbol = '€';
+            else if (cur === 'GBP') symbol = '£';
+
             expenseList += `- [${status}] ${statusIcon} **${expense.name}** - ${symbol}${expense.amount.toFixed(2)} - Due: ${expense.dueDay} - Method: ${expense.paymentMethod}\n`;
             expenseList += `  - ID: \`${expense.id}\`\n`;
             if (payment?.confirmationNumber) {
@@ -217,7 +223,13 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             oneTimeExpenses.forEach(expense => {
                 const status = expense.paid ? 'x' : ' ';
                 const statusIcon = expense.paid ? '✅' : '⬜';
-                const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
+                const cur = expense.currency || 'USD';
+                let symbol = cur + ' ';
+                if (cur === 'USD') symbol = '$';
+                else if (cur === 'BOB') symbol = 'Bs ';
+                else if (cur === 'EUR') symbol = '€';
+                else if (cur === 'GBP') symbol = '£';
+
                 expenseList += `- [${status}] ${statusIcon} **${expense.name}** - ${symbol}${expense.amount.toFixed(2)} - Date: ${expense.date} - Method: ${expense.paymentMethod}\n`;
                 expenseList += `  - ID: \`${expense.id}\`\n`;
                 if (expense.confirmationNumber) {
@@ -544,7 +556,13 @@ class DashboardView extends ItemView {
             totalsDiv.style.paddingTop = '10px';
 
             currencies.forEach(currency => {
-                const symbol = currency === 'USD' ? '$' : (currency === 'BOB' ? 'Bs ' : `${currency} `);
+                // Generic symbol logic: use $ for USD, Bs for BOB, otherwise just the code
+                let symbol = currency + ' ';
+                if (currency === 'USD') symbol = '$';
+                else if (currency === 'BOB') symbol = 'Bs ';
+                else if (currency === 'EUR') symbol = '€';
+                else if (currency === 'GBP') symbol = '£';
+
                 const data = totals[currency];
 
                 const row = totalsDiv.createDiv('currency-row');
@@ -877,14 +895,42 @@ class AddExpenseModal extends Modal {
             });
 
         // Currency
-        new Setting(form)
+        const currencySetting = new Setting(form)
             .setName('Currency')
             .addDropdown(dropdown => {
                 dropdown
                     .addOption('USD', 'USD ($)')
                     .addOption('BOB', 'BOB (Bs)')
-                    .setValue(this.expense?.currency || this.oneTimeExpense?.currency || 'USD');
-                dropdown.selectEl.id = 'expense-currency';
+                    .addOption('EUR', 'EUR (€)')
+                    .addOption('GBP', 'GBP (£)')
+                    .addOption('OTHER', 'Other (Custom)')
+                    .setValue(
+                        ['USD', 'BOB', 'EUR', 'GBP'].includes(this.expense?.currency || this.oneTimeExpense?.currency || 'USD')
+                            ? (this.expense?.currency || this.oneTimeExpense?.currency || 'USD')
+                            : 'OTHER'
+                    );
+                dropdown.selectEl.id = 'expense-currency-select';
+
+                dropdown.onChange((value) => {
+                    const customInput = document.getElementById('expense-currency-custom-container');
+                    if (customInput) {
+                        customInput.style.display = value === 'OTHER' ? 'block' : 'none';
+                    }
+                });
+            });
+
+        // Custom Currency Input
+        const customCurrencyDiv = form.createDiv();
+        customCurrencyDiv.id = 'expense-currency-custom-container';
+        customCurrencyDiv.style.display = ['USD', 'BOB', 'EUR', 'GBP'].includes(this.expense?.currency || this.oneTimeExpense?.currency || 'USD') ? 'none' : 'block';
+
+        new Setting(customCurrencyDiv)
+            .setName('Custom Currency Code')
+            .setDesc('e.g., CAD, JPY, AUD')
+            .addText(text => {
+                const current = this.expense?.currency || this.oneTimeExpense?.currency || 'USD';
+                text.setValue(['USD', 'BOB', 'EUR', 'GBP'].includes(current) ? '' : current);
+                text.inputEl.id = 'expense-currency-custom';
             });
 
         // Amount
@@ -969,7 +1015,15 @@ class AddExpenseModal extends Modal {
 
     async handleSubmit() {
         const name = (document.getElementById('expense-name') as HTMLInputElement).value;
-        const currency = (document.getElementById('expense-currency') as HTMLInputElement).value;
+
+        let currency = (document.getElementById('expense-currency-select') as HTMLInputElement).value;
+        if (currency === 'OTHER') {
+            currency = (document.getElementById('expense-currency-custom') as HTMLInputElement).value.toUpperCase();
+            if (!currency) {
+                new Notice('Please enter a custom currency code');
+                return;
+            }
+        }
         const amount = parseFloat((document.getElementById('expense-amount') as HTMLInputElement).value);
         const paymentMethod = (document.getElementById('expense-payment-method') as HTMLInputElement).value;
         const category = (document.getElementById('expense-category') as HTMLInputElement).value;
@@ -1404,7 +1458,12 @@ class ReportModal extends Modal {
                 report += `- No expenses\n`;
             } else {
                 currencies.forEach(currency => {
-                    const symbol = currency === 'USD' ? '$' : (currency === 'BOB' ? 'Bs ' : `${currency} `);
+                    let symbol = currency + ' ';
+                    if (currency === 'USD') symbol = '$';
+                    else if (currency === 'BOB') symbol = 'Bs ';
+                    else if (currency === 'EUR') symbol = '€';
+                    else if (currency === 'GBP') symbol = '£';
+
                     const data = monthTotals[currency];
                     const unpaid = data.total - data.paid;
                     report += `- **${currency}**: Total: ${symbol}${data.total.toFixed(2)} | Paid: ${symbol}${data.paid.toFixed(2)} | Unpaid: ${symbol}${unpaid.toFixed(2)}\n`;
@@ -1422,7 +1481,12 @@ class ReportModal extends Modal {
             report += `No expenses found in this period.\n\n`;
         } else {
             allCurrencies.forEach(currency => {
-                const symbol = currency === 'USD' ? '$' : (currency === 'BOB' ? 'Bs ' : `${currency} `);
+                let symbol = currency + ' ';
+                if (currency === 'USD') symbol = '$';
+                else if (currency === 'BOB') symbol = 'Bs ';
+                else if (currency === 'EUR') symbol = '€';
+                else if (currency === 'GBP') symbol = '£';
+
                 const total = totalAmount[currency];
                 const paid = totalPaid[currency] || 0;
                 const unpaid = total - paid;
@@ -1447,7 +1511,13 @@ class ReportModal extends Modal {
             const paidCount = payments.filter(p => p.paid).length;
             const totalCount = payments.length;
 
-            const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
+            const cur = expense.currency || 'USD';
+            let symbol = cur + ' ';
+            if (cur === 'USD') symbol = '$';
+            else if (cur === 'BOB') symbol = 'Bs ';
+            else if (cur === 'EUR') symbol = '€';
+            else if (cur === 'GBP') symbol = '£';
+
             report += `### ${expense.name}\n\n`;
             report += `- Amount: ${symbol}${expense.amount.toFixed(2)}\n`;
             report += `- Payment Method: ${expense.paymentMethod}\n`;
