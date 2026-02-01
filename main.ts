@@ -129,13 +129,13 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         let leaf = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)[0];
         
         if (!leaf) {
-            const rightLeaf = workspace.getRightLeaf(false);
-            if (rightLeaf) {
-                await rightLeaf.setViewState({
+            const newLeaf = workspace.getLeaf('tab');
+            if (newLeaf) {
+                await newLeaf.setViewState({
                     type: VIEW_TYPE_DASHBOARD,
                     active: true
                 });
-                leaf = rightLeaf;
+                leaf = newLeaf;
             }
         }
 
