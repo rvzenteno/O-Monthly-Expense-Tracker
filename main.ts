@@ -532,22 +532,21 @@ class DashboardView extends ItemView {
         const summary = container.createDiv('expense-tracker-summary');
 
         // General Stats
-        summary.createDiv('summary-item').innerHTML = `
-            <span class="summary-label">Total Expenses:</span>
-            <span class="summary-value">${totalCount}</span>
-        `;
-        summary.createDiv('summary-item').innerHTML = `
-            <span class="summary-label">Unpaid Count:</span>
-            <span class="summary-value unpaid">${totalUnpaidCount}</span>
-        `;
+        const statItem1 = summary.createDiv('summary-item');
+        statItem1.createSpan({ text: 'Total Expenses:', cls: 'summary-label' });
+        statItem1.createSpan({ text: totalCount.toString(), cls: 'summary-value' });
+        
+        const statItem2 = summary.createDiv('summary-item');
+        statItem2.createSpan({ text: 'Unpaid Count:', cls: 'summary-label' });
+        const unpaidSpan = statItem2.createSpan({ text: totalUnpaidCount.toString(), cls: 'summary-value unpaid' });
+        if (totalUnpaidCount > 0) unpaidSpan.addClass('unpaid');
 
         // Financial Totals per Currency
         const currencies = Object.keys(totals).sort();
         if (currencies.length === 0) {
-            summary.createDiv('summary-item').innerHTML = `
-                <span class="summary-label">Total Amount:</span>
-                <span class="summary-value">$0.00</span>
-            `;
+            const statItemEmpty = summary.createDiv('summary-item');
+            statItemEmpty.createSpan({ text: 'Total Amount:', cls: 'summary-label' });
+            statItemEmpty.createSpan({ text: '$0.00', cls: 'summary-value' });
         } else {
             const totalsDiv = container.createDiv('summary-totals');
             totalsDiv.style.gridColumn = '1 / -1';
@@ -570,12 +569,10 @@ class DashboardView extends ItemView {
                 row.style.justifyContent = 'space-between';
                 row.style.marginBottom = '5px';
 
-                row.innerHTML = `
-                    <span style="font-weight: bold;">${currency}</span>
-                    <span>Total: ${symbol}${data.total.toFixed(2)}</span>
-                    <span class="paid">Paid: ${symbol}${data.paid.toFixed(2)}</span>
-                    <span class="unpaid">Unpaid: ${symbol}${(data.total - data.paid).toFixed(2)}</span>
-                `;
+                row.createSpan({ text: currency }).style.fontWeight = 'bold';
+                row.createSpan({ text: `Total: ${symbol}${data.total.toFixed(2)}` });
+                row.createSpan({ text: `Paid: ${symbol}${data.paid.toFixed(2)}`, cls: 'paid' });
+                row.createSpan({ text: `Unpaid: ${symbol}${(data.total - data.paid).toFixed(2)}`, cls: 'unpaid' });
             });
         }
 
@@ -664,10 +661,9 @@ class DashboardView extends ItemView {
 
             archivedExpenses.forEach(expense => {
                 const item = archivedList.createDiv('expense-item archived');
-                item.innerHTML = `
-                    <div class="expense-name">${expense.name}</div>
-                    <div class="expense-details">${expense.currency === 'USD' ? '$' : (expense.currency === 'BOB' ? 'Bs ' : (expense.currency + ' '))}${expense.amount.toFixed(2)} - ${expense.paymentMethod}</div>
-                `;
+                item.createDiv({ cls: 'expense-name', text: expense.name });
+                const currencySymbol = expense.currency === 'USD' ? '$' : (expense.currency === 'BOB' ? 'Bs ' : (expense.currency + ' '));
+                item.createDiv({ cls: 'expense-details', text: `${currencySymbol}${expense.amount.toFixed(2)} - ${expense.paymentMethod}` });
 
                 item.onclick = (e) => {
                     const menu = new Menu();
@@ -722,11 +718,15 @@ class DashboardView extends ItemView {
 
         const details = content.createDiv('expense-details');
         const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
-        details.innerHTML = `
-            ${symbol}${expense.amount.toFixed(2)} • Due: ${expense.dueDay} • ${expense.paymentMethod}
-            ${payment?.confirmationNumber ? `<br>Confirmation: ${payment.confirmationNumber}` : ''}
-            ${payment?.paidDate ? `<br>Paid: ${payment.paidDate}` : ''}
-        `;
+        details.setText(`${symbol}${expense.amount.toFixed(2)} • Due: ${expense.dueDay} • ${expense.paymentMethod}`);
+        if (payment?.confirmationNumber) {
+            details.createEl('br');
+            details.appendChild(document.createTextNode(`Confirmation: ${payment.confirmationNumber}`));
+        }
+        if (payment?.paidDate) {
+            details.createEl('br');
+            details.appendChild(document.createTextNode(`Paid: ${payment.paidDate}`));
+        }
 
         const actions = item.createDiv('expense-actions');
         this.addContextMenu(actions, expense, 'recurring');
@@ -779,11 +779,15 @@ class DashboardView extends ItemView {
 
         const details = content.createDiv('expense-details');
         const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
-        details.innerHTML = `
-            ${symbol}${expense.amount.toFixed(2)} • Date: ${expense.date} • ${expense.paymentMethod}
-            ${expense.confirmationNumber ? `<br>Confirmation: ${expense.confirmationNumber}` : ''}
-            ${expense.paidDate ? `<br>Paid: ${expense.paidDate}` : ''}
-        `;
+        details.setText(`${symbol}${expense.amount.toFixed(2)} • Date: ${expense.date} • ${expense.paymentMethod}`);
+        if (expense.confirmationNumber) {
+            details.createEl('br');
+            details.appendChild(document.createTextNode(`Confirmation: ${expense.confirmationNumber}`));
+        }
+        if (expense.paidDate) {
+            details.createEl('br');
+            details.appendChild(document.createTextNode(`Paid: ${expense.paidDate}`));
+        }
 
         const actions = item.createDiv('expense-actions');
         this.addContextMenu(actions, expense, 'onetime');

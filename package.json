@@ -1,7 +1,7 @@
 {
   "name": "monthly-expense-tracker",
   "version": "1.0.0",
-  "description": "Monthly recurring expense tracker for Obsidian",
+  "description": "Monthly recurring expense tracker",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
