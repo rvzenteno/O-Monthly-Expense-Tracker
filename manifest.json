@@ -1,7 +1,7 @@
 {
   "id": "monthly-expense-tracker",
   "name": "Monthly Expense Tracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.4.0",
   "description": "Track recurring monthly expenses with payment status, reminders, and reporting. Perfect for managing bills, subscriptions, and regular payments.",
   "author": "Victor",

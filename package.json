@@ -1,6 +1,6 @@
 {
   "name": "monthly-expense-tracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Monthly recurring expense tracker",
   "main": "main.js",
   "scripts": {
