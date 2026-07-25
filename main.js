@@ -100,7 +100,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
       }
     }
     if (leaf) {
-      workspace.revealLeaf(leaf);
+      void workspace.revealLeaf(leaf);
     }
   }
   async checkAndCreateMonthlyNote() {
@@ -454,12 +454,10 @@ var DashboardView = class extends import_obsidian.ItemView {
     reportBtn.onclick = () => {
       new ReportModal(this.app, this.plugin).open();
     };
-    const supportBtn = actions.createEl("button", { text: "\u{1F499} Support Plugin" });
+    const supportBtn = actions.createEl("button", { text: "\u{1F499} Support Plugin", cls: "mod-cta" });
     supportBtn.onclick = () => {
       new SupportModal(this.app).open();
     };
-    supportBtn.style.background = "var(--interactive-accent)";
-    supportBtn.style.color = "var(--text-on-accent)";
     const expenseList = container.createEl("div", { cls: "expense-tracker-list" });
     if (totalCount === 0) {
       expenseList.createDiv("expense-tracker-empty").setText("No expenses for this month");
@@ -673,7 +671,7 @@ var AddExpenseModal = class extends import_obsidian.Modal {
       text.setValue(((_a2 = this.expense) == null ? void 0 : _a2.name) || ((_b2 = this.oneTimeExpense) == null ? void 0 : _b2.name) || "");
       text.inputEl.id = "expense-name";
     });
-    const currencySetting = new import_obsidian.Setting(form).setName("Currency").addDropdown((dropdown) => {
+    new import_obsidian.Setting(form).setName("Currency").addDropdown((dropdown) => {
       var _a2, _b2, _c, _d;
       dropdown.addOption("USD", "USD ($)").addOption("BOB", "BOB (Bs)").addOption("EUR", "EUR (\u20AC)").addOption("GBP", "GBP (\xA3)").addOption("OTHER", "Other (Custom)").setValue(
         ["USD", "BOB", "EUR", "GBP"].includes(((_a2 = this.expense) == null ? void 0 : _a2.currency) || ((_b2 = this.oneTimeExpense) == null ? void 0 : _b2.currency) || "USD") ? ((_c = this.expense) == null ? void 0 : _c.currency) || ((_d = this.oneTimeExpense) == null ? void 0 : _d.currency) || "USD" : "OTHER"
@@ -983,7 +981,7 @@ var ReportModal = class extends import_obsidian.Modal {
     const buttonDiv = contentEl.createDiv("modal-button-container");
     const generateBtn = buttonDiv.createEl("button", { text: "Generate", cls: "mod-cta" });
     generateBtn.onclick = () => {
-      this.generateReport();
+      void this.generateReport();
     };
     const cancelBtn = buttonDiv.createEl("button", { text: "Cancel" });
     cancelBtn.onclick = () => {
@@ -1174,7 +1172,6 @@ var ExpenseTrackerSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Monthly Expense Tracker Settings").setHeading();
     const supportSection = containerEl.createDiv("expense-tracker-setting-support-box");
     new import_obsidian.Setting(supportSection).setName("\u{1F499} Support This Plugin").setHeading();
     supportSection.createEl("p", {
@@ -1203,7 +1200,7 @@ var ExpenseTrackerSettingTab = class extends import_obsidian.PluginSettingTab {
       cls: "expense-tracker-text-muted"
     });
     containerEl.createEl("hr", { cls: "expense-tracker-divider" });
-    new import_obsidian.Setting(containerEl).setName("Plugin Settings").setHeading();
+    new import_obsidian.Setting(containerEl).setName("General Options").setHeading();
     new import_obsidian.Setting(containerEl).setName("Monthly Notes Folder").setDesc("Folder where monthly expense notes will be created").addText((text) => text.setValue(this.plugin.settings.monthlyNotesFolder).onChange(async (value) => {
       this.plugin.settings.monthlyNotesFolder = value;
       await this.plugin.saveSettings();

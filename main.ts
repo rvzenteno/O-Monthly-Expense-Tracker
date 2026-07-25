@@ -154,7 +154,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         }
 
         if (leaf) {
-            workspace.revealLeaf(leaf);
+            void workspace.revealLeaf(leaf);
         }
     }
 
@@ -180,7 +180,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             if (!folder) {
                 try {
                     await this.app.vault.createFolder(normalizedCurrent);
-                } catch (e) {
+                } catch {
                     // Ignore if folder exists or created concurrently
                 }
             }
@@ -600,12 +600,10 @@ class DashboardView extends ItemView {
             new ReportModal(this.app, this.plugin).open();
         };
 
-        const supportBtn = actions.createEl('button', { text: '💙 Support Plugin' });
+        const supportBtn = actions.createEl('button', { text: '💙 Support Plugin', cls: 'mod-cta' });
         supportBtn.onclick = () => {
             new SupportModal(this.app).open();
         };
-        supportBtn.style.background = 'var(--interactive-accent)';
-        supportBtn.style.color = 'var(--text-on-accent)';
 
 
         // Expense list
@@ -885,7 +883,7 @@ class AddExpenseModal extends Modal {
             });
 
         // Currency
-        const currencySetting = new Setting(form)
+        new Setting(form)
             .setName('Currency')
             .addDropdown(dropdown => {
                 dropdown
@@ -1319,7 +1317,7 @@ class ReportModal extends Modal {
 
         const generateBtn = buttonDiv.createEl('button', { text: 'Generate', cls: 'mod-cta' });
         generateBtn.onclick = () => {
-            this.generateReport();
+            void this.generateReport();
         };
 
         const cancelBtn = buttonDiv.createEl('button', { text: 'Cancel' });
@@ -1520,8 +1518,6 @@ class ExpenseTrackerSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        new Setting(containerEl).setName('Monthly Expense Tracker Settings').setHeading();
-
         // Support Section
         const supportSection = containerEl.createDiv('expense-tracker-setting-support-box');
 
@@ -1562,7 +1558,7 @@ class ExpenseTrackerSettingTab extends PluginSettingTab {
         });
 
         containerEl.createEl('hr', { cls: 'expense-tracker-divider' });
-        new Setting(containerEl).setName('Plugin Settings').setHeading();
+        new Setting(containerEl).setName('General Options').setHeading();
 
         new Setting(containerEl)
             .setName('Monthly Notes Folder')
