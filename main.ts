@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import {
     App,
     Plugin,
@@ -155,7 +154,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         }
 
         if (leaf) {
-            void workspace.revealLeaf(leaf);
+            workspace.setActiveLeaf(leaf, { focus: true });
         }
     }
 
@@ -1559,7 +1558,7 @@ class ExpenseTrackerSettingTab extends PluginSettingTab {
         });
 
         containerEl.createEl('hr', { cls: 'expense-tracker-divider' });
-        new Setting(containerEl).setName('Folder & Automation Options').setHeading();
+        new Setting(containerEl).setName('Automation & Files').setHeading();
 
         new Setting(containerEl)
             .setName('Monthly Notes Folder')

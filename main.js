@@ -100,7 +100,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
       }
     }
     if (leaf) {
-      void workspace.revealLeaf(leaf);
+      workspace.setActiveLeaf(leaf, { focus: true });
     }
   }
   async checkAndCreateMonthlyNote() {
@@ -1200,7 +1200,7 @@ var ExpenseTrackerSettingTab = class extends import_obsidian.PluginSettingTab {
       cls: "expense-tracker-text-muted"
     });
     containerEl.createEl("hr", { cls: "expense-tracker-divider" });
-    new import_obsidian.Setting(containerEl).setName("Folder & Automation Options").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Automation & Files").setHeading();
     new import_obsidian.Setting(containerEl).setName("Monthly Notes Folder").setDesc("Folder where monthly expense notes will be created").addText((text) => text.setValue(this.plugin.settings.monthlyNotesFolder).onChange(async (value) => {
       this.plugin.settings.monthlyNotesFolder = value;
       await this.plugin.saveSettings();
