@@ -916,34 +916,19 @@ var SupportModal = class extends import_obsidian.Modal {
     contentEl.createEl("p", {
       text: "Thank you for considering supporting this plugin! Your support helps maintain and improve this tool."
     });
-    const paypalSection = contentEl.createDiv("expense-tracker-support-section");
-    paypalSection.createEl("h3", { text: "\u{1F4B3} PayPal" });
-    paypalSection.createEl("p", { text: "One-time or recurring donations via PayPal:" });
-    paypalSection.createEl("a", {
-      text: "\u2192 Donate via PayPal",
+    const linksSection = contentEl.createDiv("expense-tracker-support-section");
+    linksSection.createEl("h3", { text: "\u{1F4B3} PayPal & Support" });
+    linksSection.createEl("p", { text: "Support development via PayPal or Buy Me a Coffee:" });
+    const linksDiv = linksSection.createDiv("expense-tracker-setting-links");
+    linksDiv.createEl("a", {
+      text: "\u{1F4B3} PayPal",
       href: "https://www.paypal.com/paypalme/VictorZenteno",
-      cls: "expense-tracker-support-link"
+      cls: "expense-tracker-setting-btn"
     });
-    const cryptoSection = contentEl.createDiv("expense-tracker-support-section");
-    cryptoSection.createEl("h3", { text: "\u{1FA99} Cryptocurrency (USDC/USDT)" });
-    cryptoSection.createEl("p", { text: "Support with stablecoins on multiple networks:" });
-    const cryptoAddresses = cryptoSection.createDiv("expense-tracker-crypto-addresses");
-    const usdcDiv = cryptoAddresses.createDiv("expense-tracker-crypto-address");
-    usdcDiv.createEl("strong", { text: "USDC (Base Network - Low Fees):" });
-    usdcDiv.createEl("code", { text: "0x1023142d0548b63542f2a4803b6724d4c26b8bda", cls: "expense-tracker-code-block" });
-    usdcDiv.createEl("small", { text: "Also works on: Ethereum, Polygon, Arbitrum, Optimism", cls: "expense-tracker-note" });
-    const usdtDiv = cryptoAddresses.createDiv("expense-tracker-crypto-address");
-    usdtDiv.createEl("strong", { text: "USDT (Tron TRC-20 - Ultra Low Fees):" });
-    usdtDiv.createEl("code", { text: "TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W", cls: "expense-tracker-code-block" });
-    cryptoSection.createEl("p", { text: "\u26A0\uFE0F Important: Double-check the network before sending!", cls: "expense-tracker-text-error" });
-    cryptoSection.createEl("p", { text: "\u{1F4A1} Tip: Use Tron for USDT or Base for USDC to minimize fees!", cls: "expense-tracker-text-muted" });
-    const coffeeSection = contentEl.createDiv("expense-tracker-support-section");
-    coffeeSection.createEl("h3", { text: "\u2615 Buy Me a Coffee" });
-    coffeeSection.createEl("p", { text: "Simple, friendly way to support:" });
-    coffeeSection.createEl("a", {
-      text: "\u2192 Buy Me a Coffee",
+    linksDiv.createEl("a", {
+      text: "\u2615 Buy Me a Coffee",
       href: "https://buymeacoffee.com/rvzen",
-      cls: "expense-tracker-support-link"
+      cls: "expense-tracker-setting-btn"
     });
     const otherSection = contentEl.createDiv("expense-tracker-support-section");
     otherSection.createEl("h3", { text: "\u{1F31F} Other Ways to Support" });
