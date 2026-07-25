@@ -374,7 +374,7 @@ var DashboardView = class extends import_obsidian.ItemView {
       this.currentMonth = (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").subtract(1, "month").format("YYYY-MM");
       this.refresh();
     };
-    monthSelector.createEl("span", {
+    monthSelector.createSpan({
       text: (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").format("MMMM YYYY"),
       cls: "expense-tracker-month-display"
     });
@@ -458,7 +458,7 @@ var DashboardView = class extends import_obsidian.ItemView {
     supportBtn.onclick = () => {
       new SupportModal(this.app).open();
     };
-    const expenseList = container.createEl("div", { cls: "expense-tracker-list" });
+    const expenseList = container.createDiv("expense-tracker-list");
     if (totalCount === 0) {
       expenseList.createDiv("expense-tracker-empty").setText("No expenses for this month");
     } else {
@@ -1200,7 +1200,7 @@ var ExpenseTrackerSettingTab = class extends import_obsidian.PluginSettingTab {
       cls: "expense-tracker-text-muted"
     });
     containerEl.createEl("hr", { cls: "expense-tracker-divider" });
-    new import_obsidian.Setting(containerEl).setName("General Options").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Folder & Automation Options").setHeading();
     new import_obsidian.Setting(containerEl).setName("Monthly Notes Folder").setDesc("Folder where monthly expense notes will be created").addText((text) => text.setValue(this.plugin.settings.monthlyNotesFolder).onChange(async (value) => {
       this.plugin.settings.monthlyNotesFolder = value;
       await this.plugin.saveSettings();

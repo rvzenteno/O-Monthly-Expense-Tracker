@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import {
     App,
     Plugin,
@@ -495,7 +496,7 @@ class DashboardView extends ItemView {
             this.refresh();
         };
 
-        monthSelector.createEl('span', {
+        monthSelector.createSpan({
             text: moment(this.currentMonth, 'YYYY-MM').format('MMMM YYYY'),
             cls: 'expense-tracker-month-display'
         });
@@ -607,7 +608,7 @@ class DashboardView extends ItemView {
 
 
         // Expense list
-        const expenseList = container.createEl('div', { cls: 'expense-tracker-list' });
+        const expenseList = container.createDiv('expense-tracker-list');
 
         if (totalCount === 0) {
             expenseList.createDiv('expense-tracker-empty').setText('No expenses for this month');
@@ -818,7 +819,7 @@ class DashboardView extends ItemView {
                 });
             }
 
-            menu.showAtMouseEvent(e as MouseEvent);
+            menu.showAtMouseEvent(e);
         };
     }
 
@@ -840,11 +841,11 @@ class AddExpenseModal extends Modal {
 
         // Determine type based on input expense or default to recurring
         if (expense && 'date' in expense) {
-            this.oneTimeExpense = expense as OneTimeExpense;
+            this.oneTimeExpense = expense;
             this.expense = null;
             this.type = 'onetime';
         } else {
-            this.expense = expense as RecurringExpense;
+            this.expense = expense as RecurringExpense | null;
             this.oneTimeExpense = null;
             this.type = 'recurring';
         }
@@ -1558,7 +1559,7 @@ class ExpenseTrackerSettingTab extends PluginSettingTab {
         });
 
         containerEl.createEl('hr', { cls: 'expense-tracker-divider' });
-        new Setting(containerEl).setName('General Options').setHeading();
+        new Setting(containerEl).setName('Folder & Automation Options').setHeading();
 
         new Setting(containerEl)
             .setName('Monthly Notes Folder')
