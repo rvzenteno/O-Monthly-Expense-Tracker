@@ -333,7 +333,8 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     }
   }
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loadedData = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData || {});
   }
   async saveSettings() {
     await this.saveData(this.settings);
