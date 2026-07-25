@@ -52,32 +52,32 @@
     margin-bottom: 20px;
 }
 
-.summary-item {
+.expense-tracker-summary-item {
     padding: 15px;
     background: var(--background-secondary);
     border-radius: 8px;
     text-align: center;
 }
 
-.summary-label {
+.expense-tracker-summary-label {
     display: block;
     font-size: 0.85em;
     color: var(--text-muted);
     margin-bottom: 5px;
 }
 
-.summary-value {
+.expense-tracker-summary-value {
     display: block;
     font-size: 1.5em;
     font-weight: 700;
     color: var(--text-normal);
 }
 
-.summary-value.unpaid {
+.expense-tracker-summary-value.unpaid {
     color: var(--text-error);
 }
 
-.summary-value.paid {
+.expense-tracker-summary-value.paid {
     color: var(--text-success);
 }
 
@@ -132,7 +132,7 @@
 }
 
 /* Expense Item */
-.expense-item {
+.expense-tracker-item {
     display: flex;
     align-items: center;
     gap: 15px;
@@ -144,55 +144,60 @@
     transition: all 0.2s ease;
 }
 
-.expense-item:hover {
+.expense-tracker-item:hover {
     background: var(--background-secondary-alt);
     transform: translateX(2px);
 }
 
-.expense-item.paid {
+.expense-tracker-item.paid {
     opacity: 0.7;
     border-left-color: var(--text-success);
 }
 
-.expense-item.overdue {
+.expense-tracker-item.overdue {
     border-left-color: var(--text-error);
     background: var(--background-modifier-error);
 }
 
-.expense-item input[type="checkbox"] {
+.expense-tracker-item input[type="checkbox"] {
     width: 20px;
     height: 20px;
     cursor: pointer;
     flex-shrink: 0;
 }
 
-.expense-content {
+.expense-tracker-item-content {
     flex: 1;
 }
 
-.expense-name {
+.expense-tracker-item-name {
     font-size: 1.05em;
     font-weight: 600;
     color: var(--text-normal);
     margin-bottom: 5px;
 }
 
-.expense-details {
+.expense-tracker-item-details {
     font-size: 0.9em;
     color: var(--text-muted);
 }
 
-.overdue-badge {
+.expense-tracker-overdue-badge {
     color: var(--text-error);
     font-weight: 700;
     font-size: 0.9em;
 }
 
-.expense-actions {
+.expense-tracker-type-badge {
+    color: var(--text-muted);
+    font-size: 0.85em;
+}
+
+.expense-tracker-item-actions {
     flex-shrink: 0;
 }
 
-.expense-actions button {
+.expense-tracker-item-actions button {
     padding: 5px 10px;
     background: transparent;
     border: 1px solid var(--background-modifier-border);
@@ -201,7 +206,7 @@
     color: var(--text-muted);
 }
 
-.expense-actions button:hover {
+.expense-tracker-item-actions button:hover {
     background: var(--background-modifier-hover);
     color: var(--text-normal);
 }
@@ -226,28 +231,28 @@
     margin-top: 10px;
 }
 
-.expense-item.archived {
+.expense-tracker-item.archived {
     opacity: 0.5;
     cursor: pointer;
 }
 
-.expense-item.archived:hover {
+.expense-tracker-item.archived:hover {
     opacity: 0.7;
 }
 
 /* Modals */
-.expense-form {
+.expense-tracker-form {
     margin: 20px 0;
 }
 
-.modal-button-container {
+.expense-tracker-modal-button-container {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
     margin-top: 20px;
 }
 
-.modal-button-container button {
+.expense-tracker-modal-button-container button {
     padding: 8px 20px;
     border: none;
     border-radius: 4px;
@@ -256,44 +261,44 @@
     color: var(--text-normal);
 }
 
-.modal-button-container button:hover {
+.expense-tracker-modal-button-container button:hover {
     background: var(--interactive-hover);
 }
 
-.modal-button-container button.mod-cta {
+.expense-tracker-modal-button-container button.mod-cta {
     background: var(--interactive-accent);
     color: var(--text-on-accent);
 }
 
-.modal-button-container button.mod-cta:hover {
+.expense-tracker-modal-button-container button.mod-cta:hover {
     background: var(--interactive-accent-hover);
 }
 
 /* History Table */
-.expense-history-table {
+.expense-tracker-history-table {
     width: 100%;
     margin: 20px 0;
     border-collapse: collapse;
 }
 
-.expense-history-table th,
-.expense-history-table td {
+.expense-tracker-history-table th,
+.expense-tracker-history-table td {
     padding: 10px;
     text-align: left;
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.expense-history-table th {
+.expense-tracker-history-table th {
     background: var(--background-secondary);
     font-weight: 600;
     color: var(--text-normal);
 }
 
-.expense-history-table td {
+.expense-tracker-history-table td {
     color: var(--text-muted);
 }
 
-.expense-history-table tr:hover {
+.expense-tracker-history-table tr:hover {
     background: var(--background-secondary-alt);
 }
 
@@ -309,12 +314,12 @@
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .expense-item {
+    .expense-tracker-item {
         flex-direction: column;
         align-items: flex-start;
     }
     
-    .expense-actions {
+    .expense-tracker-item-actions {
         width: 100%;
         display: flex;
         justify-content: flex-end;
@@ -337,12 +342,12 @@
 }
 
 /* Dark Theme Adjustments */
-.theme-dark .expense-item.overdue {
+.theme-dark .expense-tracker-item.overdue {
     background: rgba(var(--color-red-rgb), 0.1);
 }
 
 /* Light Theme Adjustments */
-.theme-light .expense-item.overdue {
+.theme-light .expense-tracker-item.overdue {
     background: rgba(var(--color-red-rgb), 0.05);
 }
 
@@ -358,7 +363,7 @@
     }
 }
 
-.expense-item {
+.expense-tracker-item {
     animation: slideIn 0.3s ease;
 }
 
@@ -385,27 +390,27 @@
     max-width: 600px;
 }
 
-.expense-tracker-support-modal .support-section {
+.expense-tracker-support-modal .expense-tracker-support-section {
     margin-bottom: 25px;
     padding-bottom: 20px;
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.expense-tracker-support-modal .support-section:last-of-type {
+.expense-tracker-support-modal .expense-tracker-support-section:last-of-type {
     border-bottom: none;
 }
 
-.expense-tracker-support-modal .support-section h3 {
+.expense-tracker-support-modal .expense-tracker-support-section h3 {
     margin: 0 0 10px 0;
     color: var(--text-normal);
 }
 
-.expense-tracker-support-modal .support-section p {
+.expense-tracker-support-modal .expense-tracker-support-section p {
     margin: 5px 0;
     color: var(--text-muted);
 }
 
-.expense-tracker-support-modal .support-link {
+.expense-tracker-support-modal .expense-tracker-support-link {
     display: inline-block;
     margin-top: 10px;
     padding: 8px 16px;
@@ -417,29 +422,29 @@
     transition: background 0.2s ease;
 }
 
-.expense-tracker-support-modal .support-link:hover {
+.expense-tracker-support-modal .expense-tracker-support-link:hover {
     background: var(--interactive-accent-hover);
 }
 
-.expense-tracker-support-modal .crypto-addresses {
+.expense-tracker-support-modal .expense-tracker-crypto-addresses {
     margin-top: 10px;
 }
 
-.expense-tracker-support-modal .crypto-address {
+.expense-tracker-support-modal .expense-tracker-crypto-address {
     margin-bottom: 15px;
 }
 
-.expense-tracker-support-modal .support-footer {
+.expense-tracker-support-modal .expense-tracker-support-footer {
     text-align: center;
 }
 
-.expense-tracker-support-modal .support-footer p {
+.expense-tracker-support-modal .expense-tracker-support-footer p {
     margin: 5px 0;
     font-weight: 600;
     color: var(--interactive-accent);
 }
 
-.expense-tracker-support-modal .support-footer small {
+.expense-tracker-support-modal .expense-tracker-support-footer small {
     color: var(--text-muted);
 }
 
@@ -453,4 +458,3 @@
     border: none;
     border-top: 2px solid var(--background-modifier-border);
 }
-

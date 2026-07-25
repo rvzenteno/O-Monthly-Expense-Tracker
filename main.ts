@@ -9,7 +9,8 @@ import {
     Notice,
     Modal,
     moment,
-    Menu
+    Menu,
+    normalizePath
 } from 'obsidian';
 
 interface RecurringExpense {
@@ -169,16 +170,33 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         }
     }
 
+    async ensureFolderExists(folderPath: string) {
+        const normalizedPath = normalizePath(folderPath);
+        if (!normalizedPath || normalizedPath === '.' || normalizedPath === '/') return;
+
+        const parts = normalizedPath.split('/');
+        let currentPath = '';
+        for (const part of parts) {
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+            const normalizedCurrent = normalizePath(currentPath);
+            const folder = this.app.vault.getAbstractFileByPath(normalizedCurrent);
+            if (!folder) {
+                try {
+                    await this.app.vault.createFolder(normalizedCurrent);
+                } catch (e) {
+                    // Ignore if folder exists or created concurrently
+                }
+            }
+        }
+    }
+
     async createMonthlyNote(month: string): Promise<TFile> {
-        const folderPath = this.settings.monthlyNotesFolder;
+        const folderPath = normalizePath(this.settings.monthlyNotesFolder);
         const fileName = `${month}.md`;
-        const filePath = `${folderPath}/${fileName}`;
+        const filePath = normalizePath(`${folderPath}/${fileName}`);
 
         // Ensure folder exists
-        const folder = this.app.vault.getAbstractFileByPath(folderPath);
-        if (!folder) {
-            await this.app.vault.createFolder(folderPath);
-        }
+        await this.ensureFolderExists(folderPath);
 
         // Check if file already exists
         let file = this.app.vault.getAbstractFileByPath(filePath);
@@ -266,7 +284,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
     }
 
     async getMonthlyNoteFile(month: string): Promise<TFile | null> {
-        const filePath = `${this.settings.monthlyNotesFolder}/${month}.md`;
+        const filePath = normalizePath(`${this.settings.monthlyNotesFolder}/${month}.md`);
         const file = this.app.vault.getAbstractFileByPath(filePath);
         return file instanceof TFile ? file : null;
     }
@@ -532,23 +550,23 @@ class DashboardView extends ItemView {
         const summary = container.createDiv('expense-tracker-summary');
 
         // General Stats
-        const statItem1 = summary.createDiv('summary-item');
-        statItem1.createSpan({ text: 'Total Expenses:', cls: 'summary-label' });
-        statItem1.createSpan({ text: totalCount.toString(), cls: 'summary-value' });
+        const statItem1 = summary.createDiv('expense-tracker-summary-item');
+        statItem1.createSpan({ text: 'Total Expenses:', cls: 'expense-tracker-summary-label' });
+        statItem1.createSpan({ text: totalCount.toString(), cls: 'expense-tracker-summary-value' });
         
-        const statItem2 = summary.createDiv('summary-item');
-        statItem2.createSpan({ text: 'Unpaid Count:', cls: 'summary-label' });
-        const unpaidSpan = statItem2.createSpan({ text: totalUnpaidCount.toString(), cls: 'summary-value unpaid' });
+        const statItem2 = summary.createDiv('expense-tracker-summary-item');
+        statItem2.createSpan({ text: 'Unpaid Count:', cls: 'expense-tracker-summary-label' });
+        const unpaidSpan = statItem2.createSpan({ text: totalUnpaidCount.toString(), cls: 'expense-tracker-summary-value unpaid' });
         if (totalUnpaidCount > 0) unpaidSpan.addClass('unpaid');
 
         // Financial Totals per Currency
         const currencies = Object.keys(totals).sort();
         if (currencies.length === 0) {
-            const statItemEmpty = summary.createDiv('summary-item');
-            statItemEmpty.createSpan({ text: 'Total Amount:', cls: 'summary-label' });
-            statItemEmpty.createSpan({ text: '$0.00', cls: 'summary-value' });
+            const statItemEmpty = summary.createDiv('expense-tracker-summary-item');
+            statItemEmpty.createSpan({ text: 'Total Amount:', cls: 'expense-tracker-summary-label' });
+            statItemEmpty.createSpan({ text: '$0.00', cls: 'expense-tracker-summary-value' });
         } else {
-            const totalsDiv = container.createDiv('summary-totals');
+            const totalsDiv = container.createDiv('expense-tracker-summary-totals');
             totalsDiv.style.gridColumn = '1 / -1';
             totalsDiv.style.marginTop = '10px';
             totalsDiv.style.borderTop = '1px solid var(--background-modifier-border)';
@@ -660,10 +678,10 @@ class DashboardView extends ItemView {
             };
 
             archivedExpenses.forEach(expense => {
-                const item = archivedList.createDiv('expense-item archived');
-                item.createDiv({ cls: 'expense-name', text: expense.name });
+                const item = archivedList.createDiv('expense-tracker-item archived');
+                item.createDiv({ cls: 'expense-tracker-item-name', text: expense.name });
                 const currencySymbol = expense.currency === 'USD' ? '$' : (expense.currency === 'BOB' ? 'Bs ' : (expense.currency + ' '));
-                item.createDiv({ cls: 'expense-details', text: `${currencySymbol}${expense.amount.toFixed(2)} - ${expense.paymentMethod}` });
+                item.createDiv({ cls: 'expense-tracker-item-details', text: `${currencySymbol}${expense.amount.toFixed(2)} - ${expense.paymentMethod}` });
 
                 item.onclick = (e) => {
                     const menu = new Menu();
@@ -691,7 +709,7 @@ class DashboardView extends ItemView {
         const isPaid = payment?.paid || false;
         const isOverdue = expense.dueDay < parseInt(moment().format('D')) && !isPaid && this.currentMonth === moment().format('YYYY-MM');
 
-        const item = container.createDiv('expense-item');
+        const item = container.createDiv('expense-tracker-item');
         if (isPaid) item.addClass('paid');
         if (isOverdue) item.addClass('overdue');
 
@@ -709,14 +727,14 @@ class DashboardView extends ItemView {
             }
         };
 
-        const content = item.createDiv('expense-content');
-        const nameDiv = content.createDiv('expense-name');
+        const content = item.createDiv('expense-tracker-item-content');
+        const nameDiv = content.createDiv('expense-tracker-item-name');
         nameDiv.setText(expense.name);
         if (isOverdue) {
-            nameDiv.createSpan({ text: ' ⚠️ OVERDUE', cls: 'overdue-badge' });
+            nameDiv.createSpan({ text: ' ⚠️ OVERDUE', cls: 'expense-tracker-overdue-badge' });
         }
 
-        const details = content.createDiv('expense-details');
+        const details = content.createDiv('expense-tracker-item-details');
         const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
         details.setText(`${symbol}${expense.amount.toFixed(2)} • Due: ${expense.dueDay} • ${expense.paymentMethod}`);
         if (payment?.confirmationNumber) {
@@ -728,7 +746,7 @@ class DashboardView extends ItemView {
             details.appendChild(document.createTextNode(`Paid: ${payment.paidDate}`));
         }
 
-        const actions = item.createDiv('expense-actions');
+        const actions = item.createDiv('expense-tracker-item-actions');
         this.addContextMenu(actions, expense, 'recurring');
     }
 
@@ -737,7 +755,7 @@ class DashboardView extends ItemView {
         const expenseDate = moment(expense.date);
         const isOverdue = expenseDate.isBefore(moment(), 'day') && !isPaid;
 
-        const item = container.createDiv('expense-item');
+        const item = container.createDiv('expense-tracker-item');
         if (isPaid) item.addClass('paid');
         if (isOverdue) item.addClass('overdue');
 
@@ -746,17 +764,6 @@ class DashboardView extends ItemView {
         checkbox.onclick = async (e) => {
             e.stopPropagation();
             if (!isPaid) {
-                // For one-time expenses, we can just mark/unmark directly or ask for confirmation if needed
-                // Reusing MarkPaidModal logic but adapted could be complex, 
-                // simpler to just toggle or use a prompt if confirmation # is needed.
-                // Let's implement a direct toggle with optional prompt for now or custom modal.
-                // To keep it simple for now, direct update. 
-                // Actually, let's allow adding confirmation number.
-
-                // Create a simple one-time payment modal or reuse logic?
-                // Reuse MarkPaidModal might be tricky due to types.
-                // Let's make a mini-modal on the fly or just update.
-
                 await this.plugin.markOneTimeExpensePaid(expense.id, true);
                 this.refresh();
             } else {
@@ -765,19 +772,19 @@ class DashboardView extends ItemView {
             }
         };
 
-        const content = item.createDiv('expense-content');
-        const nameDiv = content.createDiv('expense-name');
+        const content = item.createDiv('expense-tracker-item-content');
+        const nameDiv = content.createDiv('expense-tracker-item-name');
         nameDiv.setText(expense.name);
-        const badge = nameDiv.createSpan({ text: ' (One-Time)', cls: 'expense-type-badge' });
+        const badge = nameDiv.createSpan({ text: ' (One-Time)', cls: 'expense-tracker-type-badge' });
         badge.style.fontSize = '0.8em';
         badge.style.color = 'var(--text-muted)';
         badge.style.marginLeft = '5px';
 
         if (isOverdue) {
-            nameDiv.createSpan({ text: ' ⚠️ OVERDUE', cls: 'overdue-badge' });
+            nameDiv.createSpan({ text: ' ⚠️ OVERDUE', cls: 'expense-tracker-overdue-badge' });
         }
 
-        const details = content.createDiv('expense-details');
+        const details = content.createDiv('expense-tracker-item-details');
         const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
         details.setText(`${symbol}${expense.amount.toFixed(2)} • Date: ${expense.date} • ${expense.paymentMethod}`);
         if (expense.confirmationNumber) {
@@ -789,7 +796,7 @@ class DashboardView extends ItemView {
             details.appendChild(document.createTextNode(`Paid: ${expense.paidDate}`));
         }
 
-        const actions = item.createDiv('expense-actions');
+        const actions = item.createDiv('expense-tracker-item-actions');
         this.addContextMenu(actions, expense, 'onetime');
     }
 
@@ -872,7 +879,7 @@ class AddExpenseModal extends Modal {
 
         contentEl.createEl('h2', { text: this.expense || this.oneTimeExpense ? 'Edit Expense' : 'Add Expense' });
 
-        const form = contentEl.createDiv('expense-form');
+        const form = contentEl.createDiv('expense-tracker-form');
 
         // Type Toggle (only for new expenses)
         if (!this.expense && !this.oneTimeExpense) {
@@ -1004,7 +1011,7 @@ class AddExpenseModal extends Modal {
             });
 
         // Buttons
-        const buttonDiv = contentEl.createDiv('modal-button-container');
+        const buttonDiv = contentEl.createDiv('expense-tracker-modal-button-container');
 
         const saveBtn = buttonDiv.createEl('button', { text: 'Save', cls: 'mod-cta' });
         saveBtn.onclick = async () => {
@@ -1134,7 +1141,7 @@ class MarkPaidModal extends Modal {
                 text.inputEl.id = 'confirmation-number';
             });
 
-        const buttonDiv = contentEl.createDiv('modal-button-container');
+        const buttonDiv = contentEl.createDiv('expense-tracker-modal-button-container');
 
         const saveBtn = buttonDiv.createEl('button', { text: 'Mark Paid', cls: 'mod-cta' });
         saveBtn.onclick = async () => {
@@ -1186,7 +1193,7 @@ class HistoryModal extends Modal {
         if (history.length === 0) {
             contentEl.createEl('p', { text: 'No payment history' });
         } else {
-            const table = contentEl.createEl('table', { cls: 'expense-history-table' });
+            const table = contentEl.createEl('table', { cls: 'expense-tracker-history-table' });
             const thead = table.createEl('thead');
             const headerRow = thead.createEl('tr');
             headerRow.createEl('th', { text: 'Month' });
@@ -1233,23 +1240,23 @@ class SupportModal extends Modal {
         });
 
         // PayPal Section
-        const paypalSection = contentEl.createDiv('support-section');
+        const paypalSection = contentEl.createDiv('expense-tracker-support-section');
         paypalSection.createEl('h3', { text: '💳 PayPal' });
         paypalSection.createEl('p', { text: 'One-time or recurring donations via PayPal:' });
         const paypalBtn = paypalSection.createEl('a', {
             text: '→ Donate via PayPal',
             href: 'https://www.paypal.com/paypalme/VictorZenteno'
         });
-        paypalBtn.addClass('support-link');
+        paypalBtn.addClass('expense-tracker-support-link');
 
         // Crypto Section
-        const cryptoSection = contentEl.createDiv('support-section');
+        const cryptoSection = contentEl.createDiv('expense-tracker-support-section');
         cryptoSection.createEl('h3', { text: '🪙 Cryptocurrency (USDC/USDT)' });
         cryptoSection.createEl('p', { text: 'Support with stablecoins on multiple networks:' });
 
-        const cryptoAddresses = cryptoSection.createDiv('crypto-addresses');
+        const cryptoAddresses = cryptoSection.createDiv('expense-tracker-crypto-addresses');
 
-        const usdcDiv = cryptoAddresses.createDiv('crypto-address');
+        const usdcDiv = cryptoAddresses.createDiv('expense-tracker-crypto-address');
         usdcDiv.createEl('strong', { text: 'USDC (Base Network - Low Fees):' });
         const usdcAddress = usdcDiv.createEl('code', { text: '0x1023142d0548b63542f2a4803b6724d4c26b8bda' });
         usdcAddress.style.display = 'block';
@@ -1265,7 +1272,7 @@ class SupportModal extends Modal {
         usdcNote.style.marginTop = '3px';
         usdcNote.style.color = 'var(--text-muted)';
 
-        const usdtDiv = cryptoAddresses.createDiv('crypto-address');
+        const usdtDiv = cryptoAddresses.createDiv('expense-tracker-crypto-address');
         usdtDiv.createEl('strong', { text: 'USDT (Tron TRC-20 - Ultra Low Fees):' });
         const usdtAddress = usdtDiv.createEl('code', { text: 'TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W' });
         usdtAddress.style.display = 'block';
@@ -1287,17 +1294,17 @@ class SupportModal extends Modal {
         cryptoTip.style.color = 'var(--text-muted)';
 
         // Buy Me a Coffee Section
-        const coffeeSection = contentEl.createDiv('support-section');
+        const coffeeSection = contentEl.createDiv('expense-tracker-support-section');
         coffeeSection.createEl('h3', { text: '☕ Buy Me a Coffee' });
         coffeeSection.createEl('p', { text: 'Simple, friendly way to support:' });
         const coffeeBtn = coffeeSection.createEl('a', {
             text: '→ Buy Me a Coffee',
             href: 'https://buymeacoffee.com/rvzen'
         });
-        coffeeBtn.addClass('support-link');
+        coffeeBtn.addClass('expense-tracker-support-link');
 
         // Other ways to support
-        const otherSection = contentEl.createDiv('support-section');
+        const otherSection = contentEl.createDiv('expense-tracker-support-section');
         otherSection.createEl('h3', { text: '🌟 Other Ways to Support' });
         const otherList = otherSection.createEl('ul');
         otherList.createEl('li', { text: '⭐ Star the GitHub repository' });
@@ -1307,7 +1314,7 @@ class SupportModal extends Modal {
         otherList.createEl('li', { text: '🗣️ Tell others about the plugin' });
 
         // Footer
-        const footer = contentEl.createDiv('support-footer');
+        const footer = contentEl.createDiv('expense-tracker-support-footer');
         footer.style.marginTop = '20px';
         footer.style.padding = '15px';
         footer.style.background = 'var(--background-secondary)';
@@ -1382,16 +1389,13 @@ class ReportModal extends Modal {
         const report = this.buildReport(startMonth, endMonth);
 
         // Create report in Monthly Expenses/Expense Reports folder
-        const folderPath = `${this.plugin.settings.monthlyNotesFolder}/Expense Reports`;
+        const folderPath = normalizePath(`${this.plugin.settings.monthlyNotesFolder}/Expense Reports`);
         const fileName = `Expense Report ${startMonth} to ${endMonth}.md`;
-        const filePath = `${folderPath}/${fileName}`;
+        const filePath = normalizePath(`${folderPath}/${fileName}`);
 
         // Ensure folder exists
         try {
-            const folder = this.app.vault.getAbstractFileByPath(folderPath);
-            if (!folder) {
-                await this.app.vault.createFolder(folderPath);
-            }
+            await this.plugin.ensureFolderExists(folderPath);
 
             // Create or overwrite the report
             const existingFile = this.app.vault.getAbstractFileByPath(filePath);
