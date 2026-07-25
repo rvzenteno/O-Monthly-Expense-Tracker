@@ -28,6 +28,9 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
+function getMoment(inp, format) {
+  return (0, import_obsidian.moment)(inp, format);
+}
 var DEFAULT_SETTINGS = {
   recurringExpenses: [],
   oneTimeExpenses: [],
@@ -66,7 +69,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
       id: "create-current-month-note",
       name: "Create Current Month Note",
       callback: async () => {
-        const currentMonth = (0, import_obsidian.moment)().format("YYYY-MM");
+        const currentMonth = getMoment().format("YYYY-MM");
         await this.createMonthlyNote(currentMonth);
       }
     });
@@ -104,7 +107,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     }
   }
   async checkAndCreateMonthlyNote() {
-    const currentMonth = (0, import_obsidian.moment)().format("YYYY-MM");
+    const currentMonth = getMoment().format("YYYY-MM");
     const monthlyNote = await this.getMonthlyNoteFile(currentMonth);
     if (!monthlyNote) {
       await this.createMonthlyNote(currentMonth);
@@ -139,7 +142,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     }
     const expenses = this.getExpensesForMonth(month);
     const oneTimeExpenses = this.getOneTimeExpensesForMonth(month);
-    const prevMonth = (0, import_obsidian.moment)(month, "YYYY-MM").subtract(1, "month").format("YYYY-MM");
+    const prevMonth = getMoment(month, "YYYY-MM").subtract(1, "month").format("YYYY-MM");
     const unpaidFromPrev = this.getUnpaidExpenses(prevMonth);
     let expenseList = "## Recurring Expenses\n\n";
     expenses.forEach((expense) => {
@@ -198,7 +201,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     if (expenses.length === 0 && oneTimeExpenses.length === 0) {
       expenseList += '\n*No expenses set up for this month yet. Click "**+ Add Expense**" in the dashboard to add expenses.*\n\n';
     }
-    const content = this.settings.monthlyNoteTemplate.replace("{{month}}", (0, import_obsidian.moment)(month, "YYYY-MM").format("MMMM YYYY")).replace("{{expenses}}", expenseList);
+    const content = this.settings.monthlyNoteTemplate.replace("{{month}}", getMoment(month, "YYYY-MM").format("MMMM YYYY")).replace("{{expenses}}", expenseList);
     const newFile = await this.app.vault.create(filePath, content);
     new import_obsidian.Notice(`Created monthly note for ${month}`);
     return newFile;
@@ -211,9 +214,9 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
   getExpensesForMonth(month) {
     return this.settings.recurringExpenses.filter((expense) => {
       if (expense.archived) return false;
-      const expenseStart = (0, import_obsidian.moment)(expense.startDate, "YYYY-MM");
-      const expenseEnd = expense.endDate ? (0, import_obsidian.moment)(expense.endDate, "YYYY-MM") : null;
-      const checkMonth = (0, import_obsidian.moment)(month, "YYYY-MM");
+      const expenseStart = getMoment(expense.startDate, "YYYY-MM");
+      const expenseEnd = expense.endDate ? getMoment(expense.endDate, "YYYY-MM") : null;
+      const checkMonth = getMoment(month, "YYYY-MM");
       const afterStart = checkMonth.isSameOrAfter(expenseStart);
       const beforeEnd = !expenseEnd || checkMonth.isSameOrBefore(expenseEnd);
       return afterStart && beforeEnd;
@@ -235,14 +238,14 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     const existingPayment = this.getPayment(expenseId, month);
     if (existingPayment) {
       existingPayment.paid = paid;
-      existingPayment.paidDate = paid ? (0, import_obsidian.moment)().format("YYYY-MM-DD") : void 0;
+      existingPayment.paidDate = paid ? getMoment().format("YYYY-MM-DD") : void 0;
       existingPayment.confirmationNumber = confirmationNumber;
     } else {
       this.settings.monthlyPayments.push({
         expenseId,
         month,
         paid,
-        paidDate: paid ? (0, import_obsidian.moment)().format("YYYY-MM-DD") : void 0,
+        paidDate: paid ? getMoment().format("YYYY-MM-DD") : void 0,
         confirmationNumber
       });
     }
@@ -261,7 +264,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
   }
   getOneTimeExpensesForMonth(month) {
     return this.settings.oneTimeExpenses.filter((expense) => {
-      const expenseDate = (0, import_obsidian.moment)(expense.date);
+      const expenseDate = getMoment(expense.date);
       return expenseDate.format("YYYY-MM") === month;
     });
   }
@@ -269,7 +272,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     const expense = this.settings.oneTimeExpenses.find((e) => e.id === expenseId);
     if (expense) {
       expense.paid = paid;
-      expense.paidDate = paid ? (0, import_obsidian.moment)().format("YYYY-MM-DD") : void 0;
+      expense.paidDate = paid ? getMoment().format("YYYY-MM-DD") : void 0;
       if (confirmationNumber) expense.confirmationNumber = confirmationNumber;
       await this.saveSettings();
       this.updateStatusBar();
@@ -312,7 +315,7 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
   }
   updateStatusBar() {
     if (!this.statusBarItem) return;
-    const currentMonth = (0, import_obsidian.moment)().format("YYYY-MM");
+    const currentMonth = getMoment().format("YYYY-MM");
     const unpaid = this.getUnpaidExpenses(currentMonth);
     const recurringTotal = this.getExpensesForMonth(currentMonth).length;
     const oneTime = this.getOneTimeExpensesForMonth(currentMonth);
@@ -348,7 +351,7 @@ var DashboardView = class extends import_obsidian.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
-    this.currentMonth = (0, import_obsidian.moment)().format("YYYY-MM");
+    this.currentMonth = getMoment().format("YYYY-MM");
   }
   getViewType() {
     return VIEW_TYPE_DASHBOARD;
@@ -371,21 +374,21 @@ var DashboardView = class extends import_obsidian.ItemView {
     const monthSelector = container.createDiv("expense-tracker-month-selector");
     const prevBtn = monthSelector.createEl("button", { text: "\u25C0" });
     prevBtn.onclick = () => {
-      this.currentMonth = (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").subtract(1, "month").format("YYYY-MM");
+      this.currentMonth = getMoment(this.currentMonth, "YYYY-MM").subtract(1, "month").format("YYYY-MM");
       this.refresh();
     };
     monthSelector.createSpan({
-      text: (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").format("MMMM YYYY"),
+      text: getMoment(this.currentMonth, "YYYY-MM").format("MMMM YYYY"),
       cls: "expense-tracker-month-display"
     });
     const nextBtn = monthSelector.createEl("button", { text: "\u25B6" });
     nextBtn.onclick = () => {
-      this.currentMonth = (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").add(1, "month").format("YYYY-MM");
+      this.currentMonth = getMoment(this.currentMonth, "YYYY-MM").add(1, "month").format("YYYY-MM");
       this.refresh();
     };
     const todayBtn = monthSelector.createEl("button", { text: "Today" });
     todayBtn.onclick = () => {
-      this.currentMonth = (0, import_obsidian.moment)().format("YYYY-MM");
+      this.currentMonth = getMoment().format("YYYY-MM");
       this.refresh();
     };
     const recurringExpenses = this.plugin.getExpensesForMonth(this.currentMonth);
@@ -523,7 +526,7 @@ var DashboardView = class extends import_obsidian.ItemView {
   renderRecurringExpenseItem(container, expense) {
     const payment = this.plugin.getPayment(expense.id, this.currentMonth);
     const isPaid = (payment == null ? void 0 : payment.paid) || false;
-    const isOverdue = expense.dueDay < parseInt((0, import_obsidian.moment)().format("D")) && !isPaid && this.currentMonth === (0, import_obsidian.moment)().format("YYYY-MM");
+    const isOverdue = expense.dueDay < parseInt(getMoment().format("D")) && !isPaid && this.currentMonth === getMoment().format("YYYY-MM");
     const item = container.createDiv("expense-tracker-item");
     if (isPaid) item.addClass("paid");
     if (isOverdue) item.addClass("overdue");
@@ -560,8 +563,8 @@ var DashboardView = class extends import_obsidian.ItemView {
   }
   renderOneTimeExpenseItem(container, expense) {
     const isPaid = expense.paid;
-    const expenseDate = (0, import_obsidian.moment)(expense.date);
-    const isOverdue = expenseDate.isBefore((0, import_obsidian.moment)(), "day") && !isPaid;
+    const expenseDate = getMoment(expense.date);
+    const isOverdue = expenseDate.isBefore(getMoment(), "day") && !isPaid;
     const item = container.createDiv("expense-tracker-item");
     if (isPaid) item.addClass("paid");
     if (isOverdue) item.addClass("overdue");
@@ -711,7 +714,7 @@ var AddExpenseModal = class extends import_obsidian.Modal {
       });
       new import_obsidian.Setting(form).setName("Start Month").setDesc("YYYY-MM format").addText((text) => {
         var _a2;
-        text.setValue(((_a2 = this.expense) == null ? void 0 : _a2.startDate) || (0, import_obsidian.moment)().format("YYYY-MM"));
+        text.setValue(((_a2 = this.expense) == null ? void 0 : _a2.startDate) || getMoment().format("YYYY-MM"));
         text.inputEl.id = "expense-start-date";
       });
       new import_obsidian.Setting(form).setName("End Month (Optional)").setDesc("YYYY-MM format - leave empty for ongoing").addText((text) => {
@@ -722,7 +725,7 @@ var AddExpenseModal = class extends import_obsidian.Modal {
     } else {
       new import_obsidian.Setting(form).setName("Date").setDesc("YYYY-MM-DD format").addText((text) => {
         var _a2;
-        text.setValue(((_a2 = this.oneTimeExpense) == null ? void 0 : _a2.date) || (0, import_obsidian.moment)().format("YYYY-MM-DD"));
+        text.setValue(((_a2 = this.oneTimeExpense) == null ? void 0 : _a2.date) || getMoment().format("YYYY-MM-DD"));
         text.inputEl.type = "date";
         text.inputEl.id = "expense-date";
       });
@@ -886,7 +889,7 @@ var HistoryModal = class extends import_obsidian.Modal {
       const tbody = table.createEl("tbody");
       history.forEach((payment) => {
         const row = tbody.createEl("tr");
-        row.createEl("td", { text: (0, import_obsidian.moment)(payment.month, "YYYY-MM").format("MMM YYYY") });
+        row.createEl("td", { text: getMoment(payment.month, "YYYY-MM").format("MMM YYYY") });
         row.createEl("td", { text: payment.paid ? "\u2705 Paid" : "\u2B1C Unpaid" });
         row.createEl("td", { text: payment.paidDate || "-" });
         row.createEl("td", { text: payment.confirmationNumber || "-" });
@@ -971,11 +974,11 @@ var ReportModal = class extends import_obsidian.Modal {
     contentEl.createEl("h2", { text: "Expense Report" });
     const form = contentEl.createDiv();
     new import_obsidian.Setting(form).setName("Start Month").setDesc("YYYY-MM format").addText((text) => {
-      text.setValue((0, import_obsidian.moment)().subtract(5, "months").format("YYYY-MM"));
+      text.setValue(getMoment().subtract(5, "months").format("YYYY-MM"));
       text.inputEl.id = "report-start";
     });
     new import_obsidian.Setting(form).setName("End Month").setDesc("YYYY-MM format").addText((text) => {
-      text.setValue((0, import_obsidian.moment)().format("YYYY-MM"));
+      text.setValue(getMoment().format("YYYY-MM"));
       text.inputEl.id = "report-end";
     });
     const buttonDiv = contentEl.createDiv("modal-button-container");
@@ -1015,16 +1018,16 @@ var ReportModal = class extends import_obsidian.Modal {
     let report = `# Expense Report
 
 `;
-    report += `**Period:** ${(0, import_obsidian.moment)(startMonth, "YYYY-MM").format("MMM YYYY")} - ${(0, import_obsidian.moment)(endMonth, "YYYY-MM").format("MMM YYYY")}
+    report += `**Period:** ${getMoment(startMonth, "YYYY-MM").format("MMM YYYY")} - ${getMoment(endMonth, "YYYY-MM").format("MMM YYYY")}
 
 `;
-    report += `**Generated:** ${(0, import_obsidian.moment)().format("YYYY-MM-DD HH:mm")}
+    report += `**Generated:** ${getMoment().format("YYYY-MM-DD HH:mm")}
 
 ---
 
 `;
-    const start = (0, import_obsidian.moment)(startMonth, "YYYY-MM");
-    const end = (0, import_obsidian.moment)(endMonth, "YYYY-MM");
+    const start = getMoment(startMonth, "YYYY-MM");
+    const end = getMoment(endMonth, "YYYY-MM");
     const totalAmount = {};
     const totalPaid = {};
     report += `## Monthly Breakdown
@@ -1114,7 +1117,7 @@ var ReportModal = class extends import_obsidian.Modal {
     const allExpenses = this.plugin.settings.recurringExpenses.filter((e) => !e.archived);
     allExpenses.forEach((expense) => {
       const payments = this.plugin.settings.monthlyPayments.filter(
-        (p) => p.expenseId === expense.id && (0, import_obsidian.moment)(p.month, "YYYY-MM").isBetween(start, end, null, "[]")
+        (p) => p.expenseId === expense.id && getMoment(p.month, "YYYY-MM").isBetween(start, end, null, "[]")
       );
       const paidCount = payments.filter((p) => p.paid).length;
       const totalCount = payments.length;
@@ -1141,7 +1144,7 @@ var ReportModal = class extends import_obsidian.Modal {
 
 `;
     const allOneTime = this.plugin.settings.oneTimeExpenses.filter(
-      (e) => (0, import_obsidian.moment)(e.date).isBetween(start, end, null, "[]")
+      (e) => getMoment(e.date).isBetween(start, end, null, "[]")
     ).sort((a, b) => a.date.localeCompare(b.date));
     if (allOneTime.length > 0) {
       allOneTime.forEach((e) => {

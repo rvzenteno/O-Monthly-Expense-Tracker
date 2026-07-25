@@ -13,6 +13,21 @@ import {
     normalizePath
 } from 'obsidian';
 
+interface TypedMoment {
+    format(format?: string): string;
+    add(amount?: number, unit?: string): TypedMoment;
+    subtract(amount?: number, unit?: string): TypedMoment;
+    isSameOrAfter(other?: TypedMoment | string | null): boolean;
+    isSameOrBefore(other?: TypedMoment | string | null): boolean;
+    isBefore(other?: TypedMoment | string | null, granularity?: string): boolean;
+    isBetween(from: TypedMoment | string, to: TypedMoment | string, units?: string | null, inclusivity?: string): boolean;
+    clone(): TypedMoment;
+}
+
+function getMoment(inp?: unknown, format?: string): TypedMoment {
+    return (moment as unknown as (input?: unknown, fmt?: string) => TypedMoment)(inp, format);
+}
+
 interface RecurringExpense {
     id: string;
     name: string;
@@ -109,7 +124,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             id: 'create-current-month-note',
             name: 'Create Current Month Note',
             callback: async () => {
-                const currentMonth = moment().format('YYYY-MM');
+                const currentMonth = getMoment().format('YYYY-MM');
                 await this.createMonthlyNote(currentMonth);
             }
         });
@@ -159,7 +174,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
     }
 
     async checkAndCreateMonthlyNote() {
-        const currentMonth = moment().format('YYYY-MM');
+        const currentMonth = getMoment().format('YYYY-MM');
         const monthlyNote = await this.getMonthlyNoteFile(currentMonth);
 
         if (!monthlyNote) {
@@ -209,7 +224,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         const oneTimeExpenses = this.getOneTimeExpensesForMonth(month);
 
         // Copy unpaid expenses from previous month
-        const prevMonth = moment(month, 'YYYY-MM').subtract(1, 'month').format('YYYY-MM');
+        const prevMonth = getMoment(month, 'YYYY-MM').subtract(1, 'month').format('YYYY-MM');
         const unpaidFromPrev = this.getUnpaidExpenses(prevMonth);
 
         // Generate expense list
@@ -270,7 +285,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
 
         // Generate content from template
         const content = this.settings.monthlyNoteTemplate
-            .replace('{{month}}', moment(month, 'YYYY-MM').format('MMMM YYYY'))
+            .replace('{{month}}', getMoment(month, 'YYYY-MM').format('MMMM YYYY'))
             .replace('{{expenses}}', expenseList);
 
         // Create file
@@ -290,9 +305,9 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         return this.settings.recurringExpenses.filter(expense => {
             if (expense.archived) return false;
 
-            const expenseStart = moment(expense.startDate, 'YYYY-MM');
-            const expenseEnd = expense.endDate ? moment(expense.endDate, 'YYYY-MM') : null;
-            const checkMonth = moment(month, 'YYYY-MM');
+            const expenseStart = getMoment(expense.startDate, 'YYYY-MM');
+            const expenseEnd = expense.endDate ? getMoment(expense.endDate, 'YYYY-MM') : null;
+            const checkMonth = getMoment(month, 'YYYY-MM');
 
             const afterStart = checkMonth.isSameOrAfter(expenseStart);
             const beforeEnd = !expenseEnd || checkMonth.isSameOrBefore(expenseEnd);
@@ -320,14 +335,14 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
 
         if (existingPayment) {
             existingPayment.paid = paid;
-            existingPayment.paidDate = paid ? moment().format('YYYY-MM-DD') : undefined;
+            existingPayment.paidDate = paid ? getMoment().format('YYYY-MM-DD') : undefined;
             existingPayment.confirmationNumber = confirmationNumber;
         } else {
             this.settings.monthlyPayments.push({
                 expenseId,
                 month,
                 paid,
-                paidDate: paid ? moment().format('YYYY-MM-DD') : undefined,
+                paidDate: paid ? getMoment().format('YYYY-MM-DD') : undefined,
                 confirmationNumber
             });
         }
@@ -350,7 +365,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
 
     getOneTimeExpensesForMonth(month: string): OneTimeExpense[] {
         return this.settings.oneTimeExpenses.filter(expense => {
-            const expenseDate = moment(expense.date);
+            const expenseDate = getMoment(expense.date);
             return expenseDate.format('YYYY-MM') === month;
         });
     }
@@ -359,7 +374,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
         const expense = this.settings.oneTimeExpenses.find(e => e.id === expenseId);
         if (expense) {
             expense.paid = paid;
-            expense.paidDate = paid ? moment().format('YYYY-MM-DD') : undefined;
+            expense.paidDate = paid ? getMoment().format('YYYY-MM-DD') : undefined;
             if (confirmationNumber) expense.confirmationNumber = confirmationNumber;
             await this.saveSettings();
             this.updateStatusBar();
@@ -409,7 +424,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
     updateStatusBar() {
         if (!this.statusBarItem) return;
 
-        const currentMonth = moment().format('YYYY-MM');
+        const currentMonth = getMoment().format('YYYY-MM');
         const unpaid = this.getUnpaidExpenses(currentMonth);
         const recurringTotal = this.getExpensesForMonth(currentMonth).length;
 
@@ -458,7 +473,7 @@ class DashboardView extends ItemView {
     constructor(leaf: WorkspaceLeaf, plugin: MonthlyExpenseTrackerPlugin) {
         super(leaf);
         this.plugin = plugin;
-        this.currentMonth = moment().format('YYYY-MM');
+        this.currentMonth = getMoment().format('YYYY-MM');
     }
 
     getViewType(): string {
@@ -491,24 +506,24 @@ class DashboardView extends ItemView {
 
         const prevBtn = monthSelector.createEl('button', { text: '◀' });
         prevBtn.onclick = () => {
-            this.currentMonth = moment(this.currentMonth, 'YYYY-MM').subtract(1, 'month').format('YYYY-MM');
+            this.currentMonth = getMoment(this.currentMonth, 'YYYY-MM').subtract(1, 'month').format('YYYY-MM');
             this.refresh();
         };
 
         monthSelector.createSpan({
-            text: moment(this.currentMonth, 'YYYY-MM').format('MMMM YYYY'),
+            text: getMoment(this.currentMonth, 'YYYY-MM').format('MMMM YYYY'),
             cls: 'expense-tracker-month-display'
         });
 
         const nextBtn = monthSelector.createEl('button', { text: '▶' });
         nextBtn.onclick = () => {
-            this.currentMonth = moment(this.currentMonth, 'YYYY-MM').add(1, 'month').format('YYYY-MM');
+            this.currentMonth = getMoment(this.currentMonth, 'YYYY-MM').add(1, 'month').format('YYYY-MM');
             this.refresh();
         };
 
         const todayBtn = monthSelector.createEl('button', { text: 'Today' });
         todayBtn.onclick = () => {
-            this.currentMonth = moment().format('YYYY-MM');
+            this.currentMonth = getMoment().format('YYYY-MM');
             this.refresh();
         };
 
@@ -691,7 +706,7 @@ class DashboardView extends ItemView {
     renderRecurringExpenseItem(container: HTMLElement, expense: RecurringExpense) {
         const payment = this.plugin.getPayment(expense.id, this.currentMonth);
         const isPaid = payment?.paid || false;
-        const isOverdue = expense.dueDay < parseInt(moment().format('D')) && !isPaid && this.currentMonth === moment().format('YYYY-MM');
+        const isOverdue = expense.dueDay < parseInt(getMoment().format('D')) && !isPaid && this.currentMonth === getMoment().format('YYYY-MM');
 
         const item = container.createDiv('expense-tracker-item');
         if (isPaid) item.addClass('paid');
@@ -734,8 +749,8 @@ class DashboardView extends ItemView {
 
     renderOneTimeExpenseItem(container: HTMLElement, expense: OneTimeExpense) {
         const isPaid = expense.paid;
-        const expenseDate = moment(expense.date);
-        const isOverdue = expenseDate.isBefore(moment(), 'day') && !isPaid;
+        const expenseDate = getMoment(expense.date);
+        const isOverdue = expenseDate.isBefore(getMoment(), 'day') && !isPaid;
 
         const item = container.createDiv('expense-tracker-item');
         if (isPaid) item.addClass('paid');
@@ -948,7 +963,7 @@ class AddExpenseModal extends Modal {
                 .setName('Start Month')
                 .setDesc('YYYY-MM format')
                 .addText(text => {
-                    text.setValue(this.expense?.startDate || moment().format('YYYY-MM'));
+                    text.setValue(this.expense?.startDate || getMoment().format('YYYY-MM'));
                     text.inputEl.id = 'expense-start-date';
                 });
 
@@ -965,7 +980,7 @@ class AddExpenseModal extends Modal {
                 .setName('Date')
                 .setDesc('YYYY-MM-DD format')
                 .addText(text => {
-                    text.setValue(this.oneTimeExpense?.date || moment().format('YYYY-MM-DD'));
+                    text.setValue(this.oneTimeExpense?.date || getMoment().format('YYYY-MM-DD'));
                     text.inputEl.type = 'date';
                     text.inputEl.id = 'expense-date';
                 });
@@ -1181,7 +1196,7 @@ class HistoryModal extends Modal {
             const tbody = table.createEl('tbody');
             history.forEach(payment => {
                 const row = tbody.createEl('tr');
-                row.createEl('td', { text: moment(payment.month, 'YYYY-MM').format('MMM YYYY') });
+                row.createEl('td', { text: getMoment(payment.month, 'YYYY-MM').format('MMM YYYY') });
                 row.createEl('td', { text: payment.paid ? '✅ Paid' : '⬜ Unpaid' });
                 row.createEl('td', { text: payment.paidDate || '-' });
                 row.createEl('td', { text: payment.confirmationNumber || '-' });
@@ -1301,7 +1316,7 @@ class ReportModal extends Modal {
             .setName('Start Month')
             .setDesc('YYYY-MM format')
             .addText(text => {
-                text.setValue(moment().subtract(5, 'months').format('YYYY-MM'));
+                text.setValue(getMoment().subtract(5, 'months').format('YYYY-MM'));
                 text.inputEl.id = 'report-start';
             });
 
@@ -1309,7 +1324,7 @@ class ReportModal extends Modal {
             .setName('End Month')
             .setDesc('YYYY-MM format')
             .addText(text => {
-                text.setValue(moment().format('YYYY-MM'));
+                text.setValue(getMoment().format('YYYY-MM'));
                 text.inputEl.id = 'report-end';
             });
 
@@ -1359,11 +1374,11 @@ class ReportModal extends Modal {
 
     buildReport(startMonth: string, endMonth: string): string {
         let report = `# Expense Report\n\n`;
-        report += `**Period:** ${moment(startMonth, 'YYYY-MM').format('MMM YYYY')} - ${moment(endMonth, 'YYYY-MM').format('MMM YYYY')}\n\n`;
-        report += `**Generated:** ${moment().format('YYYY-MM-DD HH:mm')}\n\n---\n\n`;
+        report += `**Period:** ${getMoment(startMonth, 'YYYY-MM').format('MMM YYYY')} - ${getMoment(endMonth, 'YYYY-MM').format('MMM YYYY')}\n\n`;
+        report += `**Generated:** ${getMoment().format('YYYY-MM-DD HH:mm')}\n\n---\n\n`;
 
-        const start = moment(startMonth, 'YYYY-MM');
-        const end = moment(endMonth, 'YYYY-MM');
+        const start = getMoment(startMonth, 'YYYY-MM');
+        const end = getMoment(endMonth, 'YYYY-MM');
 
         // Aggregate totals by currency
         const totalAmount: { [key: string]: number } = {};
@@ -1457,7 +1472,7 @@ class ReportModal extends Modal {
         allExpenses.forEach(expense => {
             const payments = this.plugin.settings.monthlyPayments.filter(p =>
                 p.expenseId === expense.id &&
-                moment(p.month, 'YYYY-MM').isBetween(start, end, null, '[]')
+                getMoment(p.month, 'YYYY-MM').isBetween(start, end, null, '[]')
             );
             const paidCount = payments.filter(p => p.paid).length;
             const totalCount = payments.length;
@@ -1479,7 +1494,7 @@ class ReportModal extends Modal {
         // Maybe add One-Time list?
         report += `## One-Time Expenses List\n\n`;
         const allOneTime = this.plugin.settings.oneTimeExpenses.filter(e =>
-            moment(e.date).isBetween(start, end, null, '[]')
+            getMoment(e.date).isBetween(start, end, null, '[]')
         ).sort((a, b) => a.date.localeCompare(b.date));
 
         if (allOneTime.length > 0) {
