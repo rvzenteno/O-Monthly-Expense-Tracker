@@ -8,8 +8,6 @@ build-error.log
 # User data (IMPORTANT - keeps your personal expenses private!)
 data.json
 
-# Lock files
-package-lock.json
 
 # Build artifacts
 *.js.map
