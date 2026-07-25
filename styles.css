@@ -458,3 +458,105 @@
     border: none;
     border-top: 2px solid var(--background-modifier-border);
 }
+
+/* Helper classes for JS elements */
+.expense-tracker-summary-totals {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 10px;
+}
+
+.expense-tracker-currency-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.expense-tracker-currency-label {
+    font-weight: bold;
+}
+
+.expense-tracker-archived-header {
+    cursor: pointer;
+}
+
+.expense-tracker-archived-list {
+    margin-top: 10px;
+}
+
+.expense-tracker-archived-list.is-hidden {
+    display: none;
+}
+
+.expense-tracker-code-block {
+    display: block;
+    margin-top: 5px;
+    padding: 5px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    font-size: 0.85em;
+    word-break: break-all;
+}
+
+.expense-tracker-text-muted {
+    color: var(--text-muted);
+}
+
+.expense-tracker-text-error {
+    color: var(--text-error);
+}
+
+.expense-tracker-text-accent {
+    color: var(--interactive-accent);
+}
+
+.expense-tracker-note {
+    display: block;
+    margin-top: 3px;
+    color: var(--text-muted);
+}
+
+.expense-tracker-support-header {
+    color: var(--interactive-accent);
+}
+
+.expense-tracker-support-footer-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.expense-tracker-setting-support-box {
+    padding: 20px;
+    margin-bottom: 20px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 2px solid var(--interactive-accent);
+}
+
+.expense-tracker-setting-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.expense-tracker-setting-btn {
+    padding: 8px 16px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: inline-block;
+}
+
+.expense-tracker-btn-full {
+    margin-top: 20px;
+    width: 100%;
+}

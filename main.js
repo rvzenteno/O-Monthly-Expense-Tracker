@@ -46,13 +46,13 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
       (leaf) => new DashboardView(leaf, this)
     );
     this.addRibbonIcon("wallet", "Monthly Expense Tracker", () => {
-      this.activateDashboardView();
+      void this.activateDashboardView();
     });
     this.addCommand({
       id: "open-expense-dashboard",
       name: "Open Expense Dashboard",
       callback: () => {
-        this.activateDashboardView();
+        void this.activateDashboardView();
       }
     });
     this.addCommand({
@@ -82,10 +82,9 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
       this.updateStatusBar();
     }
     if (this.settings.autoCreateMonthlyNotes) {
-      this.checkAndCreateMonthlyNote();
+      void this.checkAndCreateMonthlyNote();
     }
     this.addSettingTab(new ExpenseTrackerSettingTab(this.app, this));
-    console.log("Monthly Expense Tracker plugin loaded");
   }
   async activateDashboardView() {
     const { workspace } = this.app;
@@ -200,9 +199,9 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
       expenseList += '\n*No expenses set up for this month yet. Click "**+ Add Expense**" in the dashboard to add expenses.*\n\n';
     }
     const content = this.settings.monthlyNoteTemplate.replace("{{month}}", (0, import_obsidian.moment)(month, "YYYY-MM").format("MMMM YYYY")).replace("{{expenses}}", expenseList);
-    file = await this.app.vault.create(filePath, content);
+    const newFile = await this.app.vault.create(filePath, content);
     new import_obsidian.Notice(`Created monthly note for ${month}`);
-    return file;
+    return newFile;
   }
   async getMonthlyNoteFile(month) {
     const filePath = (0, import_obsidian.normalizePath)(`${this.settings.monthlyNotesFolder}/${month}.md`);
@@ -343,7 +342,6 @@ var MonthlyExpenseTrackerPlugin = class extends import_obsidian.Plugin {
     });
   }
   onunload() {
-    console.log("Monthly Expense Tracker plugin unloaded");
   }
 };
 var DashboardView = class extends import_obsidian.ItemView {
@@ -376,7 +374,7 @@ var DashboardView = class extends import_obsidian.ItemView {
       this.currentMonth = (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").subtract(1, "month").format("YYYY-MM");
       this.refresh();
     };
-    const monthDisplay = monthSelector.createEl("span", {
+    monthSelector.createEl("span", {
       text: (0, import_obsidian.moment)(this.currentMonth, "YYYY-MM").format("MMMM YYYY"),
       cls: "expense-tracker-month-display"
     });
@@ -429,10 +427,6 @@ var DashboardView = class extends import_obsidian.ItemView {
       statItemEmpty.createSpan({ text: "$0.00", cls: "expense-tracker-summary-value" });
     } else {
       const totalsDiv = container.createDiv("expense-tracker-summary-totals");
-      totalsDiv.style.gridColumn = "1 / -1";
-      totalsDiv.style.marginTop = "10px";
-      totalsDiv.style.borderTop = "1px solid var(--background-modifier-border)";
-      totalsDiv.style.paddingTop = "10px";
       currencies.forEach((currency) => {
         let symbol = currency + " ";
         if (currency === "USD") symbol = "$";
@@ -440,11 +434,8 @@ var DashboardView = class extends import_obsidian.ItemView {
         else if (currency === "EUR") symbol = "\u20AC";
         else if (currency === "GBP") symbol = "\xA3";
         const data = totals[currency];
-        const row = totalsDiv.createDiv("currency-row");
-        row.style.display = "flex";
-        row.style.justifyContent = "space-between";
-        row.style.marginBottom = "5px";
-        row.createSpan({ text: currency }).style.fontWeight = "bold";
+        const row = totalsDiv.createDiv("expense-tracker-currency-row");
+        row.createSpan({ text: currency, cls: "expense-tracker-currency-label" });
         row.createSpan({ text: `Total: ${symbol}${data.total.toFixed(2)}` });
         row.createSpan({ text: `Paid: ${symbol}${data.paid.toFixed(2)}`, cls: "paid" });
         row.createSpan({ text: `Unpaid: ${symbol}${(data.total - data.paid).toFixed(2)}`, cls: "unpaid" });
@@ -501,12 +492,10 @@ var DashboardView = class extends import_obsidian.ItemView {
     const archivedExpenses = this.plugin.settings.recurringExpenses.filter((e) => e.archived);
     if (archivedExpenses.length > 0) {
       const archivedSection = container.createDiv("expense-tracker-archived");
-      const archivedHeader = archivedSection.createEl("h3", { text: "Archived Expenses" });
-      archivedHeader.style.cursor = "pointer";
-      const archivedList = archivedSection.createDiv("expense-tracker-archived-list");
-      archivedList.style.display = "none";
+      const archivedHeader = archivedSection.createEl("h3", { text: "Archived Expenses", cls: "expense-tracker-archived-header" });
+      const archivedList = archivedSection.createDiv("expense-tracker-archived-list is-hidden");
       archivedHeader.onclick = () => {
-        archivedList.style.display = archivedList.style.display === "none" ? "block" : "none";
+        archivedList.toggleClass("is-hidden", !archivedList.hasClass("is-hidden"));
       };
       archivedExpenses.forEach((expense) => {
         const item = archivedList.createDiv("expense-tracker-item archived");
@@ -563,12 +552,10 @@ var DashboardView = class extends import_obsidian.ItemView {
     const symbol = (expense.currency || "USD") === "USD" ? "$" : (expense.currency || "USD") === "BOB" ? "Bs " : `${expense.currency} `;
     details.setText(`${symbol}${expense.amount.toFixed(2)} \u2022 Due: ${expense.dueDay} \u2022 ${expense.paymentMethod}`);
     if (payment == null ? void 0 : payment.confirmationNumber) {
-      details.createEl("br");
-      details.appendChild(document.createTextNode(`Confirmation: ${payment.confirmationNumber}`));
+      details.createDiv({ text: `Confirmation: ${payment.confirmationNumber}` });
     }
     if (payment == null ? void 0 : payment.paidDate) {
-      details.createEl("br");
-      details.appendChild(document.createTextNode(`Paid: ${payment.paidDate}`));
+      details.createDiv({ text: `Paid: ${payment.paidDate}` });
     }
     const actions = item.createDiv("expense-tracker-item-actions");
     this.addContextMenu(actions, expense, "recurring");
@@ -595,10 +582,7 @@ var DashboardView = class extends import_obsidian.ItemView {
     const content = item.createDiv("expense-tracker-item-content");
     const nameDiv = content.createDiv("expense-tracker-item-name");
     nameDiv.setText(expense.name);
-    const badge = nameDiv.createSpan({ text: " (One-Time)", cls: "expense-tracker-type-badge" });
-    badge.style.fontSize = "0.8em";
-    badge.style.color = "var(--text-muted)";
-    badge.style.marginLeft = "5px";
+    nameDiv.createSpan({ text: " (One-Time)", cls: "expense-tracker-type-badge" });
     if (isOverdue) {
       nameDiv.createSpan({ text: " \u26A0\uFE0F OVERDUE", cls: "expense-tracker-overdue-badge" });
     }
@@ -606,12 +590,10 @@ var DashboardView = class extends import_obsidian.ItemView {
     const symbol = (expense.currency || "USD") === "USD" ? "$" : (expense.currency || "USD") === "BOB" ? "Bs " : `${expense.currency} `;
     details.setText(`${symbol}${expense.amount.toFixed(2)} \u2022 Date: ${expense.date} \u2022 ${expense.paymentMethod}`);
     if (expense.confirmationNumber) {
-      details.createEl("br");
-      details.appendChild(document.createTextNode(`Confirmation: ${expense.confirmationNumber}`));
+      details.createDiv({ text: `Confirmation: ${expense.confirmationNumber}` });
     }
     if (expense.paidDate) {
-      details.createEl("br");
-      details.appendChild(document.createTextNode(`Paid: ${expense.paidDate}`));
+      details.createDiv({ text: `Paid: ${expense.paidDate}` });
     }
     const actions = item.createDiv("expense-tracker-item-actions");
     this.addContextMenu(actions, expense, "onetime");
@@ -928,63 +910,39 @@ var SupportModal = class extends import_obsidian.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("expense-tracker-support-modal");
-    const header = contentEl.createEl("h2", { text: "\u{1F499} Support Monthly Expense Tracker" });
-    header.style.color = "var(--interactive-accent)";
+    contentEl.createEl("h2", { text: "\u{1F499} Support Monthly Expense Tracker", cls: "expense-tracker-support-header" });
     contentEl.createEl("p", {
       text: "Thank you for considering supporting this plugin! Your support helps maintain and improve this tool."
     });
     const paypalSection = contentEl.createDiv("expense-tracker-support-section");
     paypalSection.createEl("h3", { text: "\u{1F4B3} PayPal" });
     paypalSection.createEl("p", { text: "One-time or recurring donations via PayPal:" });
-    const paypalBtn = paypalSection.createEl("a", {
+    paypalSection.createEl("a", {
       text: "\u2192 Donate via PayPal",
-      href: "https://www.paypal.com/paypalme/VictorZenteno"
+      href: "https://www.paypal.com/paypalme/VictorZenteno",
+      cls: "expense-tracker-support-link"
     });
-    paypalBtn.addClass("expense-tracker-support-link");
     const cryptoSection = contentEl.createDiv("expense-tracker-support-section");
     cryptoSection.createEl("h3", { text: "\u{1FA99} Cryptocurrency (USDC/USDT)" });
     cryptoSection.createEl("p", { text: "Support with stablecoins on multiple networks:" });
     const cryptoAddresses = cryptoSection.createDiv("expense-tracker-crypto-addresses");
     const usdcDiv = cryptoAddresses.createDiv("expense-tracker-crypto-address");
     usdcDiv.createEl("strong", { text: "USDC (Base Network - Low Fees):" });
-    const usdcAddress = usdcDiv.createEl("code", { text: "0x1023142d0548b63542f2a4803b6724d4c26b8bda" });
-    usdcAddress.style.display = "block";
-    usdcAddress.style.marginTop = "5px";
-    usdcAddress.style.padding = "5px";
-    usdcAddress.style.background = "var(--background-secondary)";
-    usdcAddress.style.borderRadius = "4px";
-    usdcAddress.style.fontSize = "0.85em";
-    usdcAddress.style.wordBreak = "break-all";
-    const usdcNote = usdcDiv.createEl("small", { text: "Also works on: Ethereum, Polygon, Arbitrum, Optimism" });
-    usdcNote.style.display = "block";
-    usdcNote.style.marginTop = "3px";
-    usdcNote.style.color = "var(--text-muted)";
+    usdcDiv.createEl("code", { text: "0x1023142d0548b63542f2a4803b6724d4c26b8bda", cls: "expense-tracker-code-block" });
+    usdcDiv.createEl("small", { text: "Also works on: Ethereum, Polygon, Arbitrum, Optimism", cls: "expense-tracker-note" });
     const usdtDiv = cryptoAddresses.createDiv("expense-tracker-crypto-address");
     usdtDiv.createEl("strong", { text: "USDT (Tron TRC-20 - Ultra Low Fees):" });
-    const usdtAddress = usdtDiv.createEl("code", { text: "TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W" });
-    usdtAddress.style.display = "block";
-    usdtAddress.style.marginTop = "5px";
-    usdtAddress.style.padding = "5px";
-    usdtAddress.style.background = "var(--background-secondary)";
-    usdtAddress.style.borderRadius = "4px";
-    usdtAddress.style.fontSize = "0.85em";
-    usdtAddress.style.wordBreak = "break-all";
-    const cryptoNote = cryptoSection.createEl("p", { text: "\u26A0\uFE0F Important: Double-check the network before sending!" });
-    cryptoNote.style.color = "var(--text-error)";
-    cryptoNote.style.fontSize = "0.9em";
-    cryptoNote.style.marginTop = "10px";
-    const cryptoTip = cryptoSection.createEl("p", { text: "\u{1F4A1} Tip: Use Tron for USDT or Base for USDC to minimize fees!" });
-    cryptoTip.style.fontSize = "0.9em";
-    cryptoTip.style.marginTop = "5px";
-    cryptoTip.style.color = "var(--text-muted)";
+    usdtDiv.createEl("code", { text: "TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W", cls: "expense-tracker-code-block" });
+    cryptoSection.createEl("p", { text: "\u26A0\uFE0F Important: Double-check the network before sending!", cls: "expense-tracker-text-error" });
+    cryptoSection.createEl("p", { text: "\u{1F4A1} Tip: Use Tron for USDT or Base for USDC to minimize fees!", cls: "expense-tracker-text-muted" });
     const coffeeSection = contentEl.createDiv("expense-tracker-support-section");
     coffeeSection.createEl("h3", { text: "\u2615 Buy Me a Coffee" });
     coffeeSection.createEl("p", { text: "Simple, friendly way to support:" });
-    const coffeeBtn = coffeeSection.createEl("a", {
+    coffeeSection.createEl("a", {
       text: "\u2192 Buy Me a Coffee",
-      href: "https://buymeacoffee.com/rvzen"
+      href: "https://buymeacoffee.com/rvzen",
+      cls: "expense-tracker-support-link"
     });
-    coffeeBtn.addClass("expense-tracker-support-link");
     const otherSection = contentEl.createDiv("expense-tracker-support-section");
     otherSection.createEl("h3", { text: "\u{1F31F} Other Ways to Support" });
     const otherList = otherSection.createEl("ul");
@@ -993,17 +951,10 @@ var SupportModal = class extends import_obsidian.Modal {
     otherList.createEl("li", { text: "\u{1F4A1} Suggest new features" });
     otherList.createEl("li", { text: "\u{1F4DD} Improve documentation" });
     otherList.createEl("li", { text: "\u{1F5E3}\uFE0F Tell others about the plugin" });
-    const footer = contentEl.createDiv("expense-tracker-support-footer");
-    footer.style.marginTop = "20px";
-    footer.style.padding = "15px";
-    footer.style.background = "var(--background-secondary)";
-    footer.style.borderRadius = "8px";
-    footer.style.textAlign = "center";
+    const footer = contentEl.createDiv("expense-tracker-support-footer-box");
     footer.createEl("p", { text: "Thank you for your support! \u{1F64F}" });
     footer.createEl("small", { text: "All donations help maintain and improve this plugin" });
-    const closeBtn = contentEl.createEl("button", { text: "Close" });
-    closeBtn.style.marginTop = "20px";
-    closeBtn.style.width = "100%";
+    const closeBtn = contentEl.createEl("button", { text: "Close", cls: "expense-tracker-btn-full" });
     closeBtn.onclick = () => this.close();
   }
   onClose() {
@@ -1078,7 +1029,6 @@ var ReportModal = class extends import_obsidian.Modal {
     const end = (0, import_obsidian.moment)(endMonth, "YYYY-MM");
     const totalAmount = {};
     const totalPaid = {};
-    const totalUnpaid = {};
     report += `## Monthly Breakdown
 
 `;
@@ -1218,53 +1168,42 @@ var ExpenseTrackerSettingTab = class extends import_obsidian.PluginSettingTab {
     super(app, plugin);
     this.plugin = plugin;
   }
+  getSettingDefinitions() {
+    return [];
+  }
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Monthly Expense Tracker Settings" });
-    const supportSection = containerEl.createDiv("expense-tracker-support-section");
-    supportSection.style.padding = "20px";
-    supportSection.style.marginBottom = "20px";
-    supportSection.style.background = "var(--background-secondary)";
-    supportSection.style.borderRadius = "8px";
-    supportSection.style.border = "2px solid var(--interactive-accent)";
-    const supportHeader = supportSection.createEl("h3", { text: "\u{1F499} Support This Plugin" });
-    supportHeader.style.marginTop = "0";
-    supportHeader.style.color = "var(--interactive-accent)";
+    new import_obsidian.Setting(containerEl).setName("Monthly Expense Tracker Settings").setHeading();
+    const supportSection = containerEl.createDiv("expense-tracker-setting-support-box");
+    new import_obsidian.Setting(supportSection).setName("\u{1F499} Support This Plugin").setHeading();
     supportSection.createEl("p", {
       text: "If you find this plugin helpful, consider supporting its development!"
     });
-    const supportLinks = supportSection.createDiv();
-    supportLinks.style.display = "flex";
-    supportLinks.style.gap = "10px";
-    supportLinks.style.flexWrap = "wrap";
-    supportLinks.style.marginTop = "10px";
-    const paypalBtn = supportLinks.createEl("a", {
+    const supportLinks = supportSection.createDiv("expense-tracker-setting-links");
+    supportLinks.createEl("a", {
       text: "\u{1F4B3} PayPal",
-      href: "https://www.paypal.com/paypalme/VictorZenteno"
+      href: "https://www.paypal.com/paypalme/VictorZenteno",
+      cls: "expense-tracker-setting-btn"
     });
-    paypalBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; text-decoration: none; font-weight: 600;";
     const cryptoBtn = supportLinks.createEl("button", {
-      text: "\u{1FA99} USDC/USDT"
+      text: "\u{1FA99} USDC/USDT",
+      cls: "expense-tracker-setting-btn"
     });
-    cryptoBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; text-decoration: none; font-weight: 600; cursor: pointer; border: none;";
     cryptoBtn.onclick = () => {
       new SupportModal(this.app).open();
     };
-    const coffeeBtn = supportLinks.createEl("a", {
+    supportLinks.createEl("a", {
       text: "\u2615 Coffee",
-      href: "https://buymeacoffee.com/rvzen"
+      href: "https://buymeacoffee.com/rvzen",
+      cls: "expense-tracker-setting-btn"
     });
-    coffeeBtn.style.cssText = "padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; text-decoration: none; font-weight: 600;";
-    const supportNote = supportSection.createEl("p", {
-      text: "Your support helps maintain and improve this plugin. Thank you! \u{1F64F}"
+    supportSection.createEl("p", {
+      text: "Your support helps maintain and improve this plugin. Thank you! \u{1F64F}",
+      cls: "expense-tracker-text-muted"
     });
-    supportNote.style.marginBottom = "0";
-    supportNote.style.fontSize = "0.9em";
-    supportNote.style.color = "var(--text-muted)";
-    supportNote.style.marginTop = "10px";
     containerEl.createEl("hr", { cls: "expense-tracker-divider" });
-    containerEl.createEl("h2", { text: "Plugin Settings" });
+    new import_obsidian.Setting(containerEl).setName("Plugin Settings").setHeading();
     new import_obsidian.Setting(containerEl).setName("Monthly Notes Folder").setDesc("Folder where monthly expense notes will be created").addText((text) => text.setValue(this.plugin.settings.monthlyNotesFolder).onChange(async (value) => {
       this.plugin.settings.monthlyNotesFolder = value;
       await this.plugin.saveSettings();

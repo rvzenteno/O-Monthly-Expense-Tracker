@@ -69,7 +69,6 @@ const DEFAULT_SETTINGS: ExpenseTrackerSettings = {
 };
 
 const VIEW_TYPE_DASHBOARD = 'expense-tracker-dashboard';
-const VIEW_TYPE_CALENDAR = 'expense-tracker-calendar';
 
 export default class MonthlyExpenseTrackerPlugin extends Plugin {
     settings: ExpenseTrackerSettings;
@@ -86,7 +85,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
 
         // Add ribbon icon
         this.addRibbonIcon('wallet', 'Monthly Expense Tracker', () => {
-            this.activateDashboardView();
+            void this.activateDashboardView();
         });
 
         // Add commands
@@ -94,7 +93,7 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             id: 'open-expense-dashboard',
             name: 'Open Expense Dashboard',
             callback: () => {
-                this.activateDashboardView();
+                void this.activateDashboardView();
             }
         });
 
@@ -131,13 +130,11 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
 
         // Auto-create monthly note if needed
         if (this.settings.autoCreateMonthlyNotes) {
-            this.checkAndCreateMonthlyNote();
+            void this.checkAndCreateMonthlyNote();
         }
 
         // Settings tab
         this.addSettingTab(new ExpenseTrackerSettingTab(this.app, this));
-
-        console.log('Monthly Expense Tracker plugin loaded');
     }
 
     async activateDashboardView() {
@@ -277,10 +274,10 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
             .replace('{{expenses}}', expenseList);
 
         // Create file
-        file = await this.app.vault.create(filePath, content);
+        const newFile = await this.app.vault.create(filePath, content);
         new Notice(`Created monthly note for ${month}`);
 
-        return file as TFile;
+        return newFile;
     }
 
     async getMonthlyNoteFile(month: string): Promise<TFile | null> {
@@ -451,7 +448,6 @@ export default class MonthlyExpenseTrackerPlugin extends Plugin {
     }
 
     onunload() {
-        console.log('Monthly Expense Tracker plugin unloaded');
     }
 }
 // Dashboard View
@@ -499,7 +495,7 @@ class DashboardView extends ItemView {
             this.refresh();
         };
 
-        const monthDisplay = monthSelector.createEl('span', {
+        monthSelector.createEl('span', {
             text: moment(this.currentMonth, 'YYYY-MM').format('MMMM YYYY'),
             cls: 'expense-tracker-month-display'
         });
@@ -567,10 +563,6 @@ class DashboardView extends ItemView {
             statItemEmpty.createSpan({ text: '$0.00', cls: 'expense-tracker-summary-value' });
         } else {
             const totalsDiv = container.createDiv('expense-tracker-summary-totals');
-            totalsDiv.style.gridColumn = '1 / -1';
-            totalsDiv.style.marginTop = '10px';
-            totalsDiv.style.borderTop = '1px solid var(--background-modifier-border)';
-            totalsDiv.style.paddingTop = '10px';
 
             currencies.forEach(currency => {
                 // Generic symbol logic: use $ for USD, Bs for BOB, otherwise just the code
@@ -582,12 +574,8 @@ class DashboardView extends ItemView {
 
                 const data = totals[currency];
 
-                const row = totalsDiv.createDiv('currency-row');
-                row.style.display = 'flex';
-                row.style.justifyContent = 'space-between';
-                row.style.marginBottom = '5px';
-
-                row.createSpan({ text: currency }).style.fontWeight = 'bold';
+                const row = totalsDiv.createDiv('expense-tracker-currency-row');
+                row.createSpan({ text: currency, cls: 'expense-tracker-currency-label' });
                 row.createSpan({ text: `Total: ${symbol}${data.total.toFixed(2)}` });
                 row.createSpan({ text: `Paid: ${symbol}${data.paid.toFixed(2)}`, cls: 'paid' });
                 row.createSpan({ text: `Unpaid: ${symbol}${(data.total - data.paid).toFixed(2)}`, cls: 'unpaid' });
@@ -667,14 +655,12 @@ class DashboardView extends ItemView {
         const archivedExpenses = this.plugin.settings.recurringExpenses.filter(e => e.archived);
         if (archivedExpenses.length > 0) {
             const archivedSection = container.createDiv('expense-tracker-archived');
-            const archivedHeader = archivedSection.createEl('h3', { text: 'Archived Expenses' });
-            archivedHeader.style.cursor = 'pointer';
+            const archivedHeader = archivedSection.createEl('h3', { text: 'Archived Expenses', cls: 'expense-tracker-archived-header' });
 
-            const archivedList = archivedSection.createDiv('expense-tracker-archived-list');
-            archivedList.style.display = 'none';
+            const archivedList = archivedSection.createDiv('expense-tracker-archived-list is-hidden');
 
             archivedHeader.onclick = () => {
-                archivedList.style.display = archivedList.style.display === 'none' ? 'block' : 'none';
+                archivedList.toggleClass('is-hidden', !archivedList.hasClass('is-hidden'));
             };
 
             archivedExpenses.forEach(expense => {
@@ -683,7 +669,7 @@ class DashboardView extends ItemView {
                 const currencySymbol = expense.currency === 'USD' ? '$' : (expense.currency === 'BOB' ? 'Bs ' : (expense.currency + ' '));
                 item.createDiv({ cls: 'expense-tracker-item-details', text: `${currencySymbol}${expense.amount.toFixed(2)} - ${expense.paymentMethod}` });
 
-                item.onclick = (e) => {
+                item.onclick = (e: MouseEvent) => {
                     const menu = new Menu();
                     menu.addItem(item => {
                         item.setTitle('Unarchive').onClick(async () => {
@@ -698,7 +684,7 @@ class DashboardView extends ItemView {
                             this.refresh();
                         });
                     });
-                    menu.showAtMouseEvent(e as MouseEvent);
+                    menu.showAtMouseEvent(e);
                 };
             });
         }
@@ -738,12 +724,10 @@ class DashboardView extends ItemView {
         const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
         details.setText(`${symbol}${expense.amount.toFixed(2)} • Due: ${expense.dueDay} • ${expense.paymentMethod}`);
         if (payment?.confirmationNumber) {
-            details.createEl('br');
-            details.appendChild(document.createTextNode(`Confirmation: ${payment.confirmationNumber}`));
+            details.createDiv({ text: `Confirmation: ${payment.confirmationNumber}` });
         }
         if (payment?.paidDate) {
-            details.createEl('br');
-            details.appendChild(document.createTextNode(`Paid: ${payment.paidDate}`));
+            details.createDiv({ text: `Paid: ${payment.paidDate}` });
         }
 
         const actions = item.createDiv('expense-tracker-item-actions');
@@ -775,10 +759,7 @@ class DashboardView extends ItemView {
         const content = item.createDiv('expense-tracker-item-content');
         const nameDiv = content.createDiv('expense-tracker-item-name');
         nameDiv.setText(expense.name);
-        const badge = nameDiv.createSpan({ text: ' (One-Time)', cls: 'expense-tracker-type-badge' });
-        badge.style.fontSize = '0.8em';
-        badge.style.color = 'var(--text-muted)';
-        badge.style.marginLeft = '5px';
+        nameDiv.createSpan({ text: ' (One-Time)', cls: 'expense-tracker-type-badge' });
 
         if (isOverdue) {
             nameDiv.createSpan({ text: ' ⚠️ OVERDUE', cls: 'expense-tracker-overdue-badge' });
@@ -788,12 +769,10 @@ class DashboardView extends ItemView {
         const symbol = (expense.currency || 'USD') === 'USD' ? '$' : ((expense.currency || 'USD') === 'BOB' ? 'Bs ' : `${expense.currency} `);
         details.setText(`${symbol}${expense.amount.toFixed(2)} • Date: ${expense.date} • ${expense.paymentMethod}`);
         if (expense.confirmationNumber) {
-            details.createEl('br');
-            details.appendChild(document.createTextNode(`Confirmation: ${expense.confirmationNumber}`));
+            details.createDiv({ text: `Confirmation: ${expense.confirmationNumber}` });
         }
         if (expense.paidDate) {
-            details.createEl('br');
-            details.appendChild(document.createTextNode(`Paid: ${expense.paidDate}`));
+            details.createDiv({ text: `Paid: ${expense.paidDate}` });
         }
 
         const actions = item.createDiv('expense-tracker-item-actions');
@@ -1232,8 +1211,7 @@ class SupportModal extends Modal {
         contentEl.empty();
         contentEl.addClass('expense-tracker-support-modal');
 
-        const header = contentEl.createEl('h2', { text: '💙 Support Monthly Expense Tracker' });
-        header.style.color = 'var(--interactive-accent)';
+        contentEl.createEl('h2', { text: '💙 Support Monthly Expense Tracker', cls: 'expense-tracker-support-header' });
 
         contentEl.createEl('p', {
             text: 'Thank you for considering supporting this plugin! Your support helps maintain and improve this tool.'
@@ -1243,11 +1221,11 @@ class SupportModal extends Modal {
         const paypalSection = contentEl.createDiv('expense-tracker-support-section');
         paypalSection.createEl('h3', { text: '💳 PayPal' });
         paypalSection.createEl('p', { text: 'One-time or recurring donations via PayPal:' });
-        const paypalBtn = paypalSection.createEl('a', {
+        paypalSection.createEl('a', {
             text: '→ Donate via PayPal',
-            href: 'https://www.paypal.com/paypalme/VictorZenteno'
+            href: 'https://www.paypal.com/paypalme/VictorZenteno',
+            cls: 'expense-tracker-support-link'
         });
-        paypalBtn.addClass('expense-tracker-support-link');
 
         // Crypto Section
         const cryptoSection = contentEl.createDiv('expense-tracker-support-section');
@@ -1258,50 +1236,25 @@ class SupportModal extends Modal {
 
         const usdcDiv = cryptoAddresses.createDiv('expense-tracker-crypto-address');
         usdcDiv.createEl('strong', { text: 'USDC (Base Network - Low Fees):' });
-        const usdcAddress = usdcDiv.createEl('code', { text: '0x1023142d0548b63542f2a4803b6724d4c26b8bda' });
-        usdcAddress.style.display = 'block';
-        usdcAddress.style.marginTop = '5px';
-        usdcAddress.style.padding = '5px';
-        usdcAddress.style.background = 'var(--background-secondary)';
-        usdcAddress.style.borderRadius = '4px';
-        usdcAddress.style.fontSize = '0.85em';
-        usdcAddress.style.wordBreak = 'break-all';
-
-        const usdcNote = usdcDiv.createEl('small', { text: 'Also works on: Ethereum, Polygon, Arbitrum, Optimism' });
-        usdcNote.style.display = 'block';
-        usdcNote.style.marginTop = '3px';
-        usdcNote.style.color = 'var(--text-muted)';
+        usdcDiv.createEl('code', { text: '0x1023142d0548b63542f2a4803b6724d4c26b8bda', cls: 'expense-tracker-code-block' });
+        usdcDiv.createEl('small', { text: 'Also works on: Ethereum, Polygon, Arbitrum, Optimism', cls: 'expense-tracker-note' });
 
         const usdtDiv = cryptoAddresses.createDiv('expense-tracker-crypto-address');
         usdtDiv.createEl('strong', { text: 'USDT (Tron TRC-20 - Ultra Low Fees):' });
-        const usdtAddress = usdtDiv.createEl('code', { text: 'TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W' });
-        usdtAddress.style.display = 'block';
-        usdtAddress.style.marginTop = '5px';
-        usdtAddress.style.padding = '5px';
-        usdtAddress.style.background = 'var(--background-secondary)';
-        usdtAddress.style.borderRadius = '4px';
-        usdtAddress.style.fontSize = '0.85em';
-        usdtAddress.style.wordBreak = 'break-all';
+        usdtDiv.createEl('code', { text: 'TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W', cls: 'expense-tracker-code-block' });
 
-        const cryptoNote = cryptoSection.createEl('p', { text: '⚠️ Important: Double-check the network before sending!' });
-        cryptoNote.style.color = 'var(--text-error)';
-        cryptoNote.style.fontSize = '0.9em';
-        cryptoNote.style.marginTop = '10px';
-
-        const cryptoTip = cryptoSection.createEl('p', { text: '💡 Tip: Use Tron for USDT or Base for USDC to minimize fees!' });
-        cryptoTip.style.fontSize = '0.9em';
-        cryptoTip.style.marginTop = '5px';
-        cryptoTip.style.color = 'var(--text-muted)';
+        cryptoSection.createEl('p', { text: '⚠️ Important: Double-check the network before sending!', cls: 'expense-tracker-text-error' });
+        cryptoSection.createEl('p', { text: '💡 Tip: Use Tron for USDT or Base for USDC to minimize fees!', cls: 'expense-tracker-text-muted' });
 
         // Buy Me a Coffee Section
         const coffeeSection = contentEl.createDiv('expense-tracker-support-section');
         coffeeSection.createEl('h3', { text: '☕ Buy Me a Coffee' });
         coffeeSection.createEl('p', { text: 'Simple, friendly way to support:' });
-        const coffeeBtn = coffeeSection.createEl('a', {
+        coffeeSection.createEl('a', {
             text: '→ Buy Me a Coffee',
-            href: 'https://buymeacoffee.com/rvzen'
+            href: 'https://buymeacoffee.com/rvzen',
+            cls: 'expense-tracker-support-link'
         });
-        coffeeBtn.addClass('expense-tracker-support-link');
 
         // Other ways to support
         const otherSection = contentEl.createDiv('expense-tracker-support-section');
@@ -1314,19 +1267,12 @@ class SupportModal extends Modal {
         otherList.createEl('li', { text: '🗣️ Tell others about the plugin' });
 
         // Footer
-        const footer = contentEl.createDiv('expense-tracker-support-footer');
-        footer.style.marginTop = '20px';
-        footer.style.padding = '15px';
-        footer.style.background = 'var(--background-secondary)';
-        footer.style.borderRadius = '8px';
-        footer.style.textAlign = 'center';
+        const footer = contentEl.createDiv('expense-tracker-support-footer-box');
         footer.createEl('p', { text: 'Thank you for your support! 🙏' });
         footer.createEl('small', { text: 'All donations help maintain and improve this plugin' });
 
         // Close button
-        const closeBtn = contentEl.createEl('button', { text: 'Close' });
-        closeBtn.style.marginTop = '20px';
-        closeBtn.style.width = '100%';
+        const closeBtn = contentEl.createEl('button', { text: 'Close', cls: 'expense-tracker-btn-full' });
         closeBtn.onclick = () => this.close();
     }
 
@@ -1424,7 +1370,6 @@ class ReportModal extends Modal {
         // Aggregate totals by currency
         const totalAmount: { [key: string]: number } = {};
         const totalPaid: { [key: string]: number } = {};
-        const totalUnpaid: { [key: string]: number } = {};
 
         report += `## Monthly Breakdown\n\n`;
 
@@ -1567,67 +1512,57 @@ class ExpenseTrackerSettingTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
+    getSettingDefinitions(): string[] {
+        return [];
+    }
+
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Monthly Expense Tracker Settings' });
+        new Setting(containerEl).setName('Monthly Expense Tracker Settings').setHeading();
 
         // Support Section
-        const supportSection = containerEl.createDiv('expense-tracker-support-section');
-        supportSection.style.padding = '20px';
-        supportSection.style.marginBottom = '20px';
-        supportSection.style.background = 'var(--background-secondary)';
-        supportSection.style.borderRadius = '8px';
-        supportSection.style.border = '2px solid var(--interactive-accent)';
+        const supportSection = containerEl.createDiv('expense-tracker-setting-support-box');
 
-        const supportHeader = supportSection.createEl('h3', { text: '💙 Support This Plugin' });
-        supportHeader.style.marginTop = '0';
-        supportHeader.style.color = 'var(--interactive-accent)';
+        new Setting(supportSection).setName('💙 Support This Plugin').setHeading();
 
         supportSection.createEl('p', {
             text: 'If you find this plugin helpful, consider supporting its development!'
         });
 
-        const supportLinks = supportSection.createDiv();
-        supportLinks.style.display = 'flex';
-        supportLinks.style.gap = '10px';
-        supportLinks.style.flexWrap = 'wrap';
-        supportLinks.style.marginTop = '10px';
+        const supportLinks = supportSection.createDiv('expense-tracker-setting-links');
 
         // PayPal button
-        const paypalBtn = supportLinks.createEl('a', {
+        supportLinks.createEl('a', {
             text: '💳 PayPal',
-            href: 'https://www.paypal.com/paypalme/VictorZenteno'
+            href: 'https://www.paypal.com/paypalme/VictorZenteno',
+            cls: 'expense-tracker-setting-btn'
         });
-        paypalBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; text-decoration: none; font-weight: 600;';
 
         // Crypto button
         const cryptoBtn = supportLinks.createEl('button', {
-            text: '🪙 USDC/USDT'
+            text: '🪙 USDC/USDT',
+            cls: 'expense-tracker-setting-btn'
         });
-        cryptoBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; text-decoration: none; font-weight: 600; cursor: pointer; border: none;';
         cryptoBtn.onclick = () => {
             new SupportModal(this.app).open();
         };
 
         // Buy Me a Coffee button
-        const coffeeBtn = supportLinks.createEl('a', {
+        supportLinks.createEl('a', {
             text: '☕ Coffee',
-            href: 'https://buymeacoffee.com/rvzen'
+            href: 'https://buymeacoffee.com/rvzen',
+            cls: 'expense-tracker-setting-btn'
         });
-        coffeeBtn.style.cssText = 'padding: 8px 16px; background: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; text-decoration: none; font-weight: 600;';
 
-        const supportNote = supportSection.createEl('p', {
-            text: 'Your support helps maintain and improve this plugin. Thank you! 🙏'
+        supportSection.createEl('p', {
+            text: 'Your support helps maintain and improve this plugin. Thank you! 🙏',
+            cls: 'expense-tracker-text-muted'
         });
-        supportNote.style.marginBottom = '0';
-        supportNote.style.fontSize = '0.9em';
-        supportNote.style.color = 'var(--text-muted)';
-        supportNote.style.marginTop = '10px';
 
         containerEl.createEl('hr', { cls: 'expense-tracker-divider' });
-        containerEl.createEl('h2', { text: 'Plugin Settings' });
+        new Setting(containerEl).setName('Plugin Settings').setHeading();
 
         new Setting(containerEl)
             .setName('Monthly Notes Folder')
