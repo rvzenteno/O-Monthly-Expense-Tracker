@@ -157,9 +157,9 @@ For corporate sponsorship inquiries, please contact: your.email@example.com
 
 ## 📧 Contact
 
-- **GitHub Issues:** [Report bugs or request features](https://github.com/yourusername/monthly-expense-tracker/issues)
-- **Email:** your.email@example.com
-- **Twitter/X:** [@yourusername](https://twitter.com/yourusername)
+- **GitHub Issues:** [Report bugs or request features](https://github.com/rvzenteno/monthly-expense-tracker/issues)
+- **Email:** rvzenteno@gmail.com
+
 
 ---
 
