@@ -54,16 +54,6 @@ TAV7qTGgvn8GnYJfXfes73tD2dAPQJ3L2W
 
 ---
 
-### Alternative: Buy Me a Coffee
-
-A simple, friendly way to support:
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/rvzen)
-
-**Link:** https://buymeacoffee.com/rvzen
-
----
-
 ## 📊 Support Tiers
 
 ### ☕ Coffee ($5)
